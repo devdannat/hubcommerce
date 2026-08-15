@@ -51,8 +51,8 @@ class CustomerController extends Controller
     // =========================================================================
     public function index(Request $request)
     {
-        // 🔒 Filtra APENAS quem é cliente e carrega relacionamentos pesados
-        $query = User::where('role', 'cliente')->with(['orders.items', 'orders.history', 'addresses', 'auditLogs' => function($q) {
+        // 🔒 Filtra APENAS quem é cliente e carrega TODOS os relacionamentos necessários
+        $query = User::where('role', 'cliente')->with(['orders.items', 'orders.history', 'orders.address', 'addresses', 'auditLogs' => function($q) {
             $q->orderBy('created_at', 'desc');
         }])->orderBy('id', 'desc');
 
@@ -140,8 +140,8 @@ class CustomerController extends Controller
                 'cuponsUsados' => $cuponsUsados,
                 'descontoFrete' => $descFrete,
                 'descontoLoja' => $descLoja,
-                'coins' => (float) $c->coins,
-                'cashback' => (float) $c->cashback,
+                'coins' => (float) ($c->coins ?? 0),
+                'cashback' => (float) ($c->cashback ?? 0),
                 'rank' => $this->getRank($ltv, $pedidosValidos->count()),
 
                 // Risco e Reembolsos
@@ -150,8 +150,9 @@ class CustomerController extends Controller
                 'reembolsosPagos' => $pedidosReembolsados->sum('total'),
                 'enderecos' => $c->addresses,
 
-                // HISTÓRICO VISUAL DE PEDIDOS (Nova Aba do CRM)
+                // 🟢 HISTÓRICO VISUAL DE PEDIDOS (Agora completo com Endereço e Rastreio!)
                 'pedidos' => $c->orders->map(function ($order) {
+                    $cuponsJson = is_string($order->applied_coupons) ? json_decode($order->applied_coupons, true) : $order->applied_coupons;
                     return [
                         'id' => $order->id,
                         'status' => $order->status,
@@ -160,12 +161,21 @@ class CustomerController extends Controller
                         'frete' => (float) $order->frete,
                         'desconto' => (float) $order->desconto,
                         'total' => (float) $order->total,
+                        'endereco' => $order->address,
+                        'cupons' => $cuponsJson ?? [],
+                        'history' => $order->history->map(function($h) {
+                            return ['data' => $h->created_at->format('d/m/Y H:i'), 'evento' => $h->event];
+                        })->values(),
                         'itens' => $order->items->map(function ($item) {
                             return [
                                 'nome' => $item->product_name,
                                 'variacao' => $item->variation_name,
+                                'sku' => $item->sku,
+                                'variacaoSku' => $item->variation_sku,
                                 'qtd' => $item->quantity,
+                                'preco' => (float) $item->price,
                                 'img' => $item->product_image,
+                                'personalizacao' => $item->customization
                             ];
                         })->values()
                     ];
@@ -175,7 +185,7 @@ class CustomerController extends Controller
                 'auditLogs' => $c->orders->flatMap(function ($order) {
                     return $order->history->map(function ($log) use ($order) {
                         return [
-                            'id' => $log->id,
+                            'id' => 'order_'.$log->id,
                             'data' => $log->created_at->format('Y-m-d\TH:i:s'),
                             'titulo' => "Atualização no Pedido #{$order->id}",
                             'desc' => $log->event,
@@ -203,7 +213,7 @@ class CustomerController extends Controller
     // =========================================================================
     public function show($id)
     {
-        $cliente = User::with(['addresses', 'auditLogs' => function($q) {
+        $cliente = User::with(['addresses', 'orders.items', 'orders.history', 'orders.address', 'auditLogs' => function($q) {
             $q->orderBy('created_at', 'desc');
         }])->findOrFail($id);
 
@@ -354,9 +364,9 @@ class CustomerController extends Controller
         $cliente = User::findOrFail($id);
 
         if ($request->tipo === 'Hub Coins') {
-            $cliente->coins += $request->valor;
+            $cliente->coins = ($cliente->coins ?? 0) + $request->valor;
         } else {
-            $cliente->cashback += $request->valor;
+            $cliente->cashback = ($cliente->cashback ?? 0) + $request->valor;
         }
         $cliente->save();
 
@@ -448,7 +458,7 @@ class CustomerController extends Controller
     {
         $request->validate([
             'nome' => 'required|string',
-            'imagem' => 'nullable|file|mimes:jpeg,png,jpg,svg,webp|max:2048' // Máx 2MB para ícones VIP
+            'imagem' => 'nullable|file|mimes:jpeg,png,jpg,svg,webp|max:2048' // Máx 2MB
         ]);
 
         if ($request->is_default) {
@@ -461,7 +471,6 @@ class CustomerController extends Controller
             'frequencia_uso', 'limite_uso'
         ]);
 
-        // 🟢 UPLOAD DA IMAGEM DA BADGE
         if ($request->hasFile('imagem')) {
             $path = $request->file('imagem')->store('vip_badges', 'public');
             $fields['imagem'] = asset('storage/' . $path);
@@ -469,7 +478,6 @@ class CustomerController extends Controller
 
         $vip = VipLevel::updateOrCreate(['id' => $request->id], $fields);
 
-        // Dispara uma auditoria global (opcional)
         $this->registrarLog(1, 'Regra VIP Atualizada', "O Nível VIP '{$vip->nome}' foi modificado/criado.");
 
         return response()->json(['status' => 'success', 'message' => 'Nível VIP processado.', 'data' => $vip]);

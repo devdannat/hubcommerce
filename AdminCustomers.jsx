@@ -23,46 +23,46 @@ const queryClient = new QueryClient({
 // 1. DICIONÁRIO COMPLETO DE ÍCONES (a11y)
 // ==========================================
 const Icons = {
-  Search: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-  Calendar: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-  EyeOpen: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
-  EyeOff: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>,
-  Filter: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
-  Eye: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
-  Close: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
-  ChevronLeft: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>,
-  ChevronRight: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
-  Package: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
-  Trophy: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
-  UsersIcon: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
-  UserCircle: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  WhatsApp: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
-  AlertTriangle: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-  MapPin: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  Activity: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
-  TrendingUp: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
-  TrendingDown: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" /></svg>,
-  CreditCard: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
-  Info: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  SettingsIcon: ({className="w-6 h-6 text-slate-400"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-  StarFull: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
-  Spinner: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>,
-  Star: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
-  Check: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>,
-  Coin: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Tag: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
-  FileText: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-  Edit3: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
-  Trash: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
-  Plus: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
-  Upload: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
-  HelpCircle: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093V14m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Repeat: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Mail: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
-  Key: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
-  Download: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
-  Crown: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>,
-  Refresh: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+    Search: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+    Calendar: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    EyeOpen: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+    EyeOff: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>,
+    Filter: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
+    Eye: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+    Close: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>,
+    ChevronLeft: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>,
+    ChevronRight: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>,
+    Package: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+    Box: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+    Trophy: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
+    UsersIcon: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+    UserCircle: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    WhatsApp: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
+    AlertTriangle: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+    MapPin: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    Activity: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+    TrendingUp: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+    TrendingDown: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" /></svg>,
+    CreditCard: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
+    Info: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    SettingsIcon: ({className="w-6 h-6 text-slate-400"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    Spinner: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>,
+    Star: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+    Check: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>,
+    Coin: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    Tag: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>,
+    FileText: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+    Edit3: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
+    Trash: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
+    Plus: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>,
+    Upload: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+    HelpCircle: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093V14m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    Repeat: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+    Mail: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+    Key: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+    Download: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+    Crown: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>,
+    Refresh: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
 };
 
 // ==========================================
@@ -1266,12 +1266,15 @@ const ultimasComprasListFiltrada = useMemo(() => {
     <FadeIn key="diretorio" className="space-y-6">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col min-h-[600px] relative z-0">
         <header className="p-6 border-b border-slate-200 bg-slate-50/50 rounded-t-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3"><span className="text-blue-500"><Icons.UsersIcon className="w-5 h-5"/></span> Diretório de Clientes</h3>
+            <div>
+                <div className="flex items-center gap-3">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3"><span className="text-blue-500"><Icons.UsersIcon className="w-5 h-5"/></span> Diretório de Clientes</h3>
+                {/* 🟢 ÍCONE DE REFRESH POSICIONADO AQUI */}
+                <button onClick={() => refetchClients()} className={`w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 shadow-sm flex items-center justify-center transition-all ${isFetchingClients ? 'animate-spin text-blue-500 border-blue-300' : ''}`} title="Atualizar Diretório">
+                    <Icons.Refresh className="w-4 h-4"/>
+                </button>
+            </div>
             <p className="text-xs text-slate-500 mt-1">Gerencie cadastros, LTV e carteiras virtuais detalhadamente.</p>
-            <button onClick={() => refetchClients()} className={`ml-4 w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center transition-all ${isFetchingClients ? 'animate-spin text-blue-500 border-blue-300' : ''}`} title="Sincronizar Manualmente">
-                  <Icons.Refresh className="w-4 h-4"/>
-            </button>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
             <div className="relative w-full sm:w-80 group">
@@ -1370,8 +1373,12 @@ const ultimasComprasListFiltrada = useMemo(() => {
         </div>
         <header className="px-8 pb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative -mt-12">
           <div className="flex items-end gap-6">
-            <div className="w-24 h-24 rounded-3xl bg-white border-4 border-white flex items-center justify-center font-black text-4xl text-blue-600 shadow-md">
-              {getAvatarInitials(clienteSelecionado?.nome)}
+            <div className="w-24 h-24 rounded-3xl bg-white border-4 border-white flex items-center justify-center font-black text-4xl text-blue-600 shadow-md overflow-hidden shrink-0">
+              {clienteSelecionado?.avatar ? (
+                  <img src={clienteSelecionado.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                  getAvatarInitials(clienteSelecionado?.nome)
+              )}
             </div>
             <div className="pb-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -1450,10 +1457,20 @@ const ultimasComprasListFiltrada = useMemo(() => {
                     </div>
 
                     <div className="space-y-4 text-xs font-medium text-slate-600 mb-6 border-b border-slate-100 pb-6 relative">
-                        {/* 🟢 STATUS VIP POSICIONADO NO CANTO */}
-                        <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-100 to-yellow-50 border border-yellow-200 text-yellow-700 font-black text-[10px] uppercase px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-                            <Icons.Crown className="w-4 h-4" /> VIP {clienteSelecionado?.rank || 'Iniciante'}
-                        </div>
+                        {/* 🟢 SELO VIP DINÂMICO COM ÍCONE DO BANCO */}
+                            {(() => {
+                             const rankInfo = niveisVIPDaApi.find(n => safeStr(n.nome).toLowerCase() === safeStr(clienteSelecionado?.rank).toLowerCase());
+                                    return (
+                                    <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-100 to-yellow-50 border border-yellow-200 text-yellow-700 font-black text-[10px] uppercase px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
+                                    {rankInfo && rankInfo.imagem ? (
+                                    <img src={rankInfo.imagem} alt="VIP" className="w-4 h-4 rounded-full object-cover shadow-sm" />
+                                    ) : (
+                                    <Icons.Crown className="w-4 h-4" />
+                                    )}
+                                    VIP {clienteSelecionado?.rank || 'Iniciante'}
+                                </div>
+                            );
+                        })()}           
                         
                         <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WhatsApp / Telefone</span><span className="font-bold text-slate-800">{safeStr(clienteSelecionado?.telefone)}</span></div>
                         <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">E-mail de Contato</span><span>{safeStr(clienteSelecionado?.email)}</span></div>
@@ -1821,27 +1838,32 @@ const ultimasComprasListFiltrada = useMemo(() => {
              )}
           </motion.section>
         )}
-        {/* 🟢 ABA: HISTÓRICO DE PEDIDOS DO CLIENTE */}
+       {/* 🟢 ABA: HISTÓRICO DE PEDIDOS DO CLIENTE */}
         {crmSubTab === 'HISTÓRICO DE PEDIDOS' && (
           <motion.section key="HISTORICO" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto w-full flex flex-col space-y-6">
               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex-1 flex flex-col min-h-[650px]">
                   
-                  <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-slate-100 shrink-0">
+                  <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 pb-6 border-b border-slate-100 shrink-0">
                       <div>
-                          <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Package className="w-6 h-6 text-blue-500"/> Histórico de Pedidos do Cliente</h3>
-                          <p className="text-xs text-slate-500 mt-1 font-medium">Visão cronológica de todas as compras, itens, reembolsos e descontos.</p>
+                          <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Package className="w-6 h-6 text-blue-500"/> Histórico de Pedidos</h3>
+                          <p className="text-xs text-slate-500 mt-1 font-medium">Visão detalhada de compras, cupons, logística e personalizações.</p>
                       </div>
-                      <div className="flex items-center gap-3 w-full md:w-auto">
-                          {/* 🟢 ABAS DE FILTRO DE STATUS */}
-                          <div className="flex gap-2 border border-slate-200 bg-slate-50 p-1 rounded-xl shadow-sm overflow-x-auto no-scrollbar">
+                      
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+                          {/* 🟢 NOVO ESTILO: FILTRO DE STATUS EM "PILLS" */}
+                          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                               {['TODOS', 'CONCLUÍDOS', 'REEMBOLSADOS', 'CANCELADOS'].map(tab => (
-                                  <button key={tab} onClick={() => { setOrderHistoryTab(tab); setOrderHistoryPage(1); }} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${orderHistoryTab === tab ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
+                                  <button 
+                                    key={tab} 
+                                    onClick={() => { setOrderHistoryTab(tab); setOrderHistoryPage(1); }} 
+                                    className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-full transition-all border shadow-sm ${orderHistoryTab === tab ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                  >
                                       {tab}
                                   </button>
                               ))}
                           </div>
                           
-                          <div className="relative z-50">
+                          <div className="relative z-50 shrink-0">
                               <HoverProgressRoundButton 
                                   text={(orderHistoryDateRange.start || orderHistoryDateRange.end) ? 'Filtrado' : 'Período'} 
                                   onClick={() => setOrderHistoryDateOpen(!orderHistoryDateOpen)} 
@@ -1865,91 +1887,124 @@ const ultimasComprasListFiltrada = useMemo(() => {
                       </div>
                   </header>
                   
-                  <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                  <div className="space-y-8 flex-1 overflow-y-auto custom-scrollbar pr-2">
                       {orderHistoryPaginados.length > 0 ? orderHistoryPaginados.map(pedido => {
-                          const dataEnvio = pedido.history?.find(h => h.evento.includes('Despachado'))?.data || 'Aguardando';
-                          const dataEntrega = pedido.history?.find(h => h.evento.includes('Entregue'))?.data || 'Aguardando';
+                          const dataEnvio = pedido.history?.find(h => safeStr(h.evento).toLowerCase().includes('despachado'))?.data || 'Aguardando';
+                          const dataEntrega = pedido.history?.find(h => safeStr(h.evento).toLowerCase().includes('entregue'))?.data || 'Aguardando';
 
                           return (
-                          <div key={pedido.id} className="border border-slate-200 rounded-2xl p-6 bg-slate-50/50 hover:bg-white transition-all shadow-sm group">
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-5 border-b border-slate-100">
-                                  <div>
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Data da Compra: {formatDateBR(pedido.data_raw)}</span>
-                                      <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">Pedido #{pedido.id}</h4>
+                          <div key={pedido.id} className="border border-slate-200 rounded-3xl p-0 bg-white hover:border-blue-300 transition-all shadow-sm group overflow-hidden">
+                              
+                              {/* 🟢 CABEÇALHO DO CARD DE PEDIDO */}
+                              <div className="bg-slate-50/80 p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                  <div className="flex items-center gap-4">
+                                      <div className="w-10 h-10 bg-white text-blue-600 rounded-xl flex items-center justify-center font-black shadow-sm border border-slate-200">
+                                          <Icons.Package className="w-5 h-5" />
+                                      </div>
+                                      <div>
+                                          <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">Pedido #{pedido.id}</h4>
+                                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Realizado em {formatDateBR(pedido.data_raw)}</span>
+                                      </div>
                                   </div>
-                                  <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border ${pedido.status === 'CANCELADO' ? 'bg-rose-50 text-rose-700 border-rose-200' : pedido.status === 'REEMBOLSADO' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{pedido.status}</span>
+                                  <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border shadow-sm ${pedido.status === 'CANCELADO' ? 'bg-rose-50 text-rose-700 border-rose-200' : pedido.status === 'REEMBOLSADO' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                      {pedido.status}
+                                  </span>
                               </div>
                               
-                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                                  {/* INFO DOS ITENS COMPRADOS */}
-                                  <div className="lg:col-span-5 space-y-4">
-                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.Box /> Itens Comprados</p>
-                                      {pedido.itens?.map((item, i) => (
-                                          <div key={i} className="flex gap-4 items-start bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                                              <img src={item.img} className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" alt=""/>
-                                              <div className="flex flex-col w-full">
-                                                  <span className="text-xs font-bold text-slate-800 leading-tight">{item.nome}</span>
-                                                  <span className="text-[10px] text-slate-500 font-medium mt-1">{item.qtd}x | SKU: <span className="font-mono text-slate-400">{item.variacaoSku}</span></span>
-                                                  <span className="text-[10px] font-bold text-blue-600 mt-1">{item.variacao}</span>
-                                                  
-                                                  {/* ITEM PERSONALIZADO NESTE HISTÓRICO */}
-                                                  {item.personalizacao && (
-                                                      <div className="mt-2 bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-lg text-[10px] text-slate-700">
-                                                          <span className="font-black text-indigo-700 uppercase tracking-widest block mb-1">✍️ Personalizado</span>
-                                                          {item.personalizacao.texto && <p>Texto: "{item.personalizacao.texto}"</p>}
-                                                          {item.personalizacao.imagem && <a href={item.personalizacao.imagem} download target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold mt-1 inline-block flex items-center gap-1"><Icons.Download /> Imagem HD</a>}
+                              {/* 🟢 CORPO DO CARD (3 COLUNAS) */}
+                              <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                  
+                                  {/* COLUNA 1: PRODUTOS E PERSONALIZAÇÃO */}
+                                  <div className="space-y-4">
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.Box className="w-4 h-4" /> Produtos ({pedido.itens?.length || 0})</p>
+                                      <div className="space-y-3">
+                                          {pedido.itens?.map((item, i) => (
+                                              <div key={i} className="flex gap-3 items-start bg-slate-50/50 p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
+                                                  <img src={item.img} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-white" alt=""/>
+                                                  <div className="flex flex-col flex-1">
+                                                      <span className="text-xs font-bold text-slate-800 leading-tight">{item.nome}</span>
+                                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+                                                          <span className="text-[9px] font-black text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{item.qtd}x</span>
+                                                          <span className="text-[9px] font-bold text-slate-400 uppercase">SKU: {item.variacaoSku || item.sku || 'N/A'}</span>
                                                       </div>
-                                                  )}
+                                                      {(item.variacao && item.variacao !== 'Padrão') && <span className="text-[10px] font-bold text-blue-600 mt-1">{item.variacao}</span>}
+                                                      
+                                                      {/* ITEM PERSONALIZADO NESTE HISTÓRICO */}
+                                                      {item.personalizacao && (
+                                                          <div className="mt-2 bg-indigo-50/40 border border-indigo-100 p-2.5 rounded-lg text-[10px] text-slate-700">
+                                                              <span className="font-black text-indigo-700 uppercase tracking-widest block mb-1">✍️ Personalizado</span>
+                                                              {item.personalizacao.texto && <p className="mb-1">Texto: <span className="font-medium italic">"{item.personalizacao.texto}"</span></p>}
+                                                              {item.personalizacao.imagem && <a href={item.personalizacao.imagem} download target="_blank" rel="noreferrer" className="text-indigo-600 hover:text-indigo-800 hover:underline font-bold mt-1 flex items-center gap-1"><Icons.Download className="w-3 h-3" /> Baixar Imagem</a>}
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+
+                                  {/* COLUNA 2: LOGÍSTICA E ENDEREÇO */}
+                                  <div className="space-y-5 lg:border-l border-slate-100 lg:pl-8">
+                                      <div>
+                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-3"><Icons.MapPin className="w-4 h-4"/> Entrega e Prazos</p>
+                                          <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 space-y-2 text-[10px] text-slate-600 font-medium">
+                                              <div className="flex justify-between items-center"><span className="text-slate-400 uppercase tracking-wider font-bold">Envio:</span> <strong className="text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{dataEnvio}</strong></div>
+                                              <div className="flex justify-between items-center"><span className="text-slate-400 uppercase tracking-wider font-bold">Entrega:</span> <strong className="text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{dataEntrega}</strong></div>
+                                          </div>
+                                      </div>
+
+                                      <div>
+                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Endereço de Destino</p>
+                                          {pedido.endereco && pedido.endereco.logradouro ? (
+                                              <p className="text-[11px] font-medium text-slate-600 leading-relaxed bg-slate-50/50 border border-slate-100 rounded-2xl p-4">
+                                                  <strong className="text-slate-800 block mb-0.5">{pedido.endereco.logradouro}, {pedido.endereco.numero} {pedido.endereco.complemento ? `- ${pedido.endereco.complemento}` : ''}</strong>
+                                                  {pedido.endereco.bairro} <br/>
+                                                  {pedido.endereco.cidade} / {pedido.endereco.uf} <br/>
+                                                  <span className="font-mono text-slate-400 mt-1 block font-bold">CEP: {pedido.endereco.cep}</span>
+                                              </p>
+                                          ) : (
+                                              <p className="text-[10px] font-medium text-slate-400 bg-slate-50 rounded-xl p-3 border border-slate-100">Endereço não registrado no sistema para este pedido.</p>
+                                          )}
+                                      </div>
+                                  </div>
+
+                                  {/* COLUNA 3: FINANCEIRO */}
+                                  <div className="space-y-4 lg:border-l border-slate-100 lg:pl-8 flex flex-col justify-between">
+                                      <div>
+                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-3"><Icons.CreditCard className="w-4 h-4"/> Resumo Financeiro</p>
+                                          
+                                          {/* Cupons Box */}
+                                          <div className="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-4 mb-4">
+                                              <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mb-2">Cupons Utilizados</p>
+                                              <div className="space-y-2">
+                                                  {pedido.cupons && pedido.cupons.length > 0 ? pedido.cupons.map((cupom, idx) => (
+                                                      <div key={idx} className="flex justify-between items-center text-[10px]">
+                                                          <span className="font-black text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{cupom.nome}</span>
+                                                          <span className="font-bold text-emerald-600">- {formatCurrency(cupom.valor)} <span className="opacity-50">({cupom.tipo})</span></span>
+                                                      </div>
+                                                  )) : <span className="text-[10px] text-slate-500 font-medium">Nenhum cupom aplicado.</span>}
                                               </div>
                                           </div>
-                                      ))}
-                                  </div>
 
-                                  {/* DETALHES DE LOGÍSTICA E DESCONTOS */}
-                                  <div className="lg:col-span-4 space-y-4 border-l border-slate-100 pl-8">
-                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.MapPin /> Logística e Benefícios</p>
-                                      
-                                      <div className="space-y-2 text-[10px] text-slate-600 font-medium">
-                                          <div className="flex justify-between"><span className="text-slate-400 uppercase tracking-wider font-bold">Data Envio:</span> <strong className="text-slate-700">{dataEnvio}</strong></div>
-                                          <div className="flex justify-between"><span className="text-slate-400 uppercase tracking-wider font-bold">Data Entrega:</span> <strong className="text-slate-700">{dataEntrega}</strong></div>
-                                      </div>
-
-                                      <div className="mt-4 pt-4 border-t border-slate-100">
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Cupons Utilizados</p>
-                                          <div className="space-y-1.5">
-                                              {pedido.cupons && pedido.cupons.length > 0 ? pedido.cupons.map((cupom, idx) => (
-                                                  <div key={idx} className="flex justify-between items-center text-[10px]">
-                                                      <span className="font-black text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{cupom.nome}</span>
-                                                      <span className="font-bold text-emerald-600">- {formatCurrency(cupom.valor)} ({cupom.tipo})</span>
-                                                  </div>
-                                              )) : <span className="text-[10px] text-slate-400 font-medium">Nenhum cupom usado.</span>}
+                                          <div className="space-y-2.5 text-[11px] font-medium text-slate-600 bg-slate-50/50 border border-slate-100 rounded-2xl p-4">
+                                              <div className="flex justify-between items-center"><span>Subtotal dos Itens:</span><strong className="text-slate-800">{formatCurrency(pedido.subtotal)}</strong></div>
+                                              <div className="flex justify-between items-center"><span>Frete:</span><strong className="text-slate-800">{formatCurrency(pedido.frete)}</strong></div>
+                                              <div className="flex justify-between items-center text-emerald-600"><span>Descontos:</span><strong>-{formatCurrency(pedido.desconto)}</strong></div>
                                           </div>
                                       </div>
 
-                                      <div className="mt-4 pt-4 border-t border-slate-100">
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Endereço Registrado</p>
-                                          <p className="text-[10px] font-medium text-slate-600 leading-relaxed">
-                                              {pedido.endereco?.logradouro}, {pedido.endereco?.numero} - {pedido.endereco?.bairro} <br/>
-                                              {pedido.endereco?.cidade}/{pedido.endereco?.uf} - CEP {pedido.endereco?.cep}
-                                          </p>
-                                      </div>
-                                  </div>
-
-                                  {/* CUSTOS E VALOR FINAL */}
-                                  <div className="lg:col-span-3 space-y-3 text-xs font-medium text-slate-600 border-l border-slate-100 pl-8 flex flex-col justify-end">
-                                      <div className="flex justify-between"><span>Subtotal:</span><strong className="text-slate-800">{formatCurrency(pedido.subtotal)}</strong></div>
-                                      <div className="flex justify-between"><span>Frete:</span><strong className="text-slate-800">{formatCurrency(pedido.frete)}</strong></div>
-                                      <div className="flex justify-between text-emerald-600"><span>Descontos Totais:</span><strong>-{formatCurrency(pedido.desconto)}</strong></div>
-                                      <div className="flex justify-between items-center pt-3 mt-1 border-t border-slate-200">
-                                          <span className="font-black text-slate-400 uppercase tracking-widest text-[10px]">Total Pago</span>
-                                          <strong className="text-xl font-black text-slate-900">{formatCurrency(pedido.total)}</strong>
+                                      <div className="bg-slate-800 rounded-2xl p-5 shadow-sm text-white flex justify-between items-center mt-4">
+                                          <span className="font-bold text-slate-300 uppercase tracking-widest text-[10px]">Total Pago</span>
+                                          <strong className="text-xl font-black">{formatCurrency(pedido.total)}</strong>
                                       </div>
                                   </div>
                               </div>
                           </div>
                           )
                       }) : (
-                          <div className="py-12 text-center text-slate-500 font-medium">Este cliente ainda não possui histórico de pedidos para os filtros selecionados.</div>
+                          <div className="py-12 text-center text-slate-500 font-medium bg-slate-50 border border-slate-200 rounded-2xl">
+                              Nenhum pedido encontrado para o status ou período selecionado.
+                          </div>
                       )}
                   </div>
 
