@@ -450,7 +450,14 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
   // CRM In-Page State
   const [crmSubTab, setCrmSubTab] = useState('RESUMO');
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
+  const [produtoExpandido, setProdutoExpandido] = useState(null); 
+
+  // Adicione esta linha:
   const [novaTag, setNovaTag] = useState('');
+
+  // Filtro de Alertas de Risco 
+  const [riscoPage, setRiscoPage] = useState(1); // <- NOVO ESTADO: Paginação dos riscos
+  const [riscoPerPage, setRiscoPerPage] = useState(5); // <- Limite de riscos
   
   // Modais State (First Page UX)
   const [perfilEmEdicao, setPerfilEmEdicao] = useState(false);
@@ -1367,62 +1374,62 @@ const ultimasComprasListFiltrada = useMemo(() => {
           </button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative z-0">
-        <div className="h-24 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-slate-100 relative">
-             {clienteSelecionado?.status === 'INATIVO' && <div className="absolute inset-0 bg-rose-500/10"></div>}
-        </div>
-        <header className="px-8 pb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 relative -mt-12">
-          <div className="flex items-end gap-6">
-            <div className="w-24 h-24 rounded-3xl bg-white border-4 border-white flex items-center justify-center font-black text-4xl text-blue-600 shadow-md overflow-hidden shrink-0">
-              {clienteSelecionado?.avatar ? (
-                  <img src={clienteSelecionado.avatar} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                  getAvatarInitials(clienteSelecionado?.nome)
-              )}
+    <div className={`bg-white rounded-[24px] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[600px] relative`}>  
+        <div className={`absolute top-0 left-0 w-full h-32 opacity-20 pointer-events-none ${clienteSelecionado?.sexo === 'Feminino' || clienteSelecionado?.sexo === 'F' ? 'bg-gradient-to-b from-pink-300 to-transparent' : 'bg-gradient-to-b from-sky-300 to-transparent'}`}></div>
+        <header className="p-8 border-b border-slate-200 bg-slate-50/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-black text-3xl text-slate-700 shadow-sm">
+            {getAvatarInitials(clienteSelecionado?.nome)}
             </div>
-            <div className="pb-1">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
+            <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                {safeStr(clienteSelecionado?.nome)}
+            </h2>
+            <div className="flex items-center gap-2 mt-2">
                 {getStatusClienteBadge(clienteSelecionado?.status)}
                 {getRankIndicator(clienteSelecionado?.rank)}
-                {clienteSelecionado?.tags?.map((tag, i) => (
-                   <span key={i} className="flex items-center gap-1 bg-slate-50 border border-slate-200 text-slate-600 text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-sm"><Icons.Tag className="w-3 h-3"/> {tag} <button onClick={()=>removerTag(tag)} aria-label="Remover Tag" className="ml-1 text-slate-400 hover:text-rose-500"><Icons.Close className="w-3 h-3"/></button></span>
-                ))}
-              </div>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">{safeStr(clienteSelecionado?.nome)}</h2>
-              <p className="text-sm font-medium text-slate-500 mt-1 flex items-center gap-4">
-                  <span>{safeStr(clienteSelecionado?.email)}</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                  <span>Membro desde {formatDateBR(clienteSelecionado?.dataCadastro)}</span>
-              </p>
+                <span className="text-sm font-medium text-slate-500 ml-2 border-l border-slate-300 pl-3">Membro desde {formatDateBR(clienteSelecionado?.dataCadastro)}</span>
             </div>
-          </div>
-          <div className="flex items-center gap-3 pb-1 w-full lg:w-auto">
-             <button 
-                 onClick={() => {
-                     setCrmSubTab('RESUMO');
-                     setPerfilEmEdicao(!perfilEmEdicao); 
-                 }} 
-                 className={`flex-1 lg:flex-none px-4 py-2.5 bg-white border ${perfilEmEdicao ? 'border-blue-300 text-blue-600 bg-blue-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-600'} rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2`}
-             >
-                 {perfilEmEdicao ? <Icons.Close className="w-4 h-4" /> : <Icons.Edit3 className="w-4 h-4" />} 
-                 {perfilEmEdicao ? 'Cancelar Edição' : 'Editar Perfil'}
-             </button>
-             {clienteSelecionado?.status === 'INATIVO' ? (
-                 <ProgressButton 
-                    onClick={() => setModalSuspensao({ isOpen: true, acao: 'REATIVAR', motivo: '', arquivo: null })} 
-                    text="Reativar Conta" 
-                    icon={Icons.Check}
-                    className="flex-1 lg:flex-none px-4 py-2.5 bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2"
-                 />
-             ) : (
-                 <ProgressButton 
-                    onClick={() => setModalSuspensao({ isOpen: true, acao: 'SUSPENDER', motivo: '', arquivo: null })} 
-                    text="Suspender" 
-                    icon={Icons.AlertTriangle}
-                    className="flex-1 lg:flex-none px-4 py-2.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2"
-                 />
-             )}
-          </div>
+            </div>
+        </div>
+        <div>
+            {clienteSelecionado?.status === 'INATIVO' || clienteSelecionado?.status === 'BLOQUEADA' ? (
+            <div className="flex flex-col gap-2">
+                <ProgressButton 
+                    onClick={() => {
+                        const motivoReativar = window.prompt("Motivo obrigatório para reativar a conta deste cliente:");
+                        if(motivoReativar && motivoReativar.trim().length > 0) {
+                            triggerAcao('reativar', 'Conta reativada com sucesso. Motivo salvo no histórico.');
+                            setClienteSelecionado(prev => ({...prev, status: 'ATIVO', notas: `${prev.notas ? prev.notas + '\n' : ''}[REATIVAÇÃO]: ${motivoReativar}`}));
+                        } else {
+                            alert("Ação cancelada: É obrigatório informar o motivo da reativação.");
+                        }
+                    }}
+                    loading={savingState === 'reativar'} text="Reativar Conta" loadingText="Reativando..." icon={Icons.CheckCircle} 
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 border border-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5" 
+                    />
+                    {clienteSelecionado?.notas && clienteSelecionado.notas.includes('[SUSPENSÃO]') && (
+                        <span className="text-[10px] font-bold text-red-600 bg-red-50 p-1.5 rounded-lg border border-red-100 max-w-[200px] truncate" title={clienteSelecionado.notas}>
+                            Último Bloqueio: {clienteSelecionado.notas.split('[SUSPENSÃO]:').pop()}
+                        </span>
+                    )}
+            </div>
+            ) : (
+            <ProgressButton 
+                onClick={() => {
+                    const motivoSuspensao = window.prompt("Atenção: Qual o motivo para suspender a conta deste cliente?");
+                    if(motivoSuspensao && motivoSuspensao.trim().length > 0) {
+                        triggerAcao('bloqueio', 'Acesso da conta bloqueado permanentemente.');
+                        setClienteSelecionado(prev => ({...prev, status: 'BLOQUEADA', notas: `${prev.notas ? prev.notas + '\n' : ''}[SUSPENSÃO]: ${motivoSuspensao}`}));
+                    } else {
+                        alert("Ação cancelada: É obrigatório informar o motivo da suspensão.");
+                    }
+                }}
+                loading={savingState === 'bloqueio'} text="Suspender Conta" loadingText="Bloqueando..." icon={Icons.AlertTriangle} 
+                className="px-5 py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5" 
+            />
+            )}
+        </div>
         </header>
 
         <nav className="flex px-8 border-t border-slate-100 bg-slate-50/50 shrink-0 overflow-x-auto custom-scrollbar relative" aria-label="Abas do Perfil">
@@ -1489,10 +1496,31 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                 <span key={i} className="flex items-center gap-1 bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-bold px-2 py-1 rounded-md shadow-sm"><Icons.Tag className="w-3 h-3"/> {tag} <button onClick={()=>removerTag(tag)} className="ml-1 text-slate-400 hover:text-rose-500"><Icons.Close className="w-3 h-3"/></button></span>
                             ))}
                         </div>
-                        <div className="flex gap-2">
-                            <input type="text" placeholder="Nova tag..." value={novaTag} onChange={(e)=>setNovaTag(e.target.value)} onKeyPress={(e)=> e.key === 'Enter' && adicionarTag()} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800" />
-                            <button onClick={adicionarTag} className="bg-blue-50 text-blue-600 border border-blue-200 rounded-xl px-3 text-xs font-bold hover:bg-blue-100 shadow-sm">Add</button>
-                        </div>
+                            <div className="flex gap-2 mt-4">
+                                <input 
+                                    type="text" 
+                                    placeholder="Nova tag..." 
+                                    value={novaTag} 
+                                    onChange={(e) => setNovaTag(e.target.value)} 
+                                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 w-full"
+                                />
+                                <button 
+                                    onClick={() => {
+                                        if(novaTag.trim() !== '') {
+                                            // Lógica para salvar a tag no cliente (exemplo abaixo)
+                                            setClienteSelecionado(prev => ({
+                                                ...prev, 
+                                                tags: [...(prev.tags || []), novaTag.trim()]
+                                            }));
+                                            // Limpa o input após adicionar
+                                            setNovaTag(''); 
+                                        }
+                                    }}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors"
+                                >
+                                    Adicionar
+                                </button>
+                            </div>
                     </div>
 
                     <a href={`https://wa.me/${safeStr(clienteSelecionado?.telefone).replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-full bg-[#25D366] text-white text-xs font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 shadow-sm hover:bg-[#1ebe57] transition-all">
@@ -1537,17 +1565,49 @@ const ultimasComprasListFiltrada = useMemo(() => {
                       </div>
                    </article>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                  <article className="bg-gradient-to-br from-blue-50/50 to-white p-6 rounded-3xl border border-blue-100 shadow-sm flex flex-col relative overflow-hidden">
-                     <div className="absolute right-0 bottom-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
-                     <h4 className="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2 relative z-10">Classificação Automática CRM</h4>
-                     <div className="flex items-center gap-2 mt-3 mb-4 relative z-10">
-                       {getRankIndicator(clienteSelecionado?.rank)}
-                     </div>
-                     <p className="text-[11px] text-slate-600 leading-relaxed font-medium mt-auto relative z-10">O nível do cliente é atribuído automaticamente pelo algoritmo com base nos requisitos da loja. O cliente possui os benefícios associados a esta badge.</p>
-                  </article>
-                  
+                {/* Timeline de Classificação CRM */}
+                <article className="bg-gradient-to-br from-indigo-50 to-white p-6 rounded-2xl border border-indigo-100 shadow-sm flex flex-col justify-center">
+                <h4 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">Trilha de Classificação (Benefícios)</h4>
+                <div className="mt-4 space-y-4 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
+                    
+                    {/* Item de Progresso da Trilha */}
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-amber-500 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"></div>
+                        <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="font-bold text-slate-800 text-xs">Membro Bronze</span>
+                                <span className="text-[9px] font-bold text-slate-400">Há 6 meses</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500">Desbloqueou: 1.5x Hub Coins por compra.</p>
+                        </div>
+                    </div>
+
+                    <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-slate-300 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"></div>
+                        <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="font-bold text-slate-800 text-xs">Membro Prata</span>
+                                <span className="text-[9px] font-bold text-slate-400">Hoje</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500">Desbloqueou: Frete Grátis nas sextas-feiras.</p>
+                        </div>
+                    </div>
+                </div>
+                </article>
+                {/* Paginação de Alertas de Risco */}
+                <article className="bg-red-50/50 p-6 rounded-2xl border border-red-100 shadow-sm flex flex-col justify-start items-start">
+                <div className="flex items-center justify-between w-full mb-2">
+                    <h4 className="text-sm font-bold text-red-800 flex items-center gap-2"><Icons.AlertTriangle className="w-5 h-5"/> Zona de Risco</h4>
+                    <div className="flex gap-2">
+                        <button onClick={() => setRiscoPage(p => Math.max(1, p - 1))} disabled={riscoPage === 1} className="w-5 h-5 flex items-center justify-center bg-white border border-red-200 rounded text-red-600 disabled:opacity-50"><Icons.ChevronLeft className="w-3 h-3" /></button>
+                        <span className="text-[10px] font-bold text-red-800">{riscoPage}</span>
+                        <button onClick={() => setRiscoPage(p => p + 1)} className="w-5 h-5 flex items-center justify-center bg-white border border-red-200 rounded text-red-600"><Icons.ChevronRight className="w-3 h-3" /></button>
+                    </div>
+                </div>
+                {/* Aqui você renderiza a lista paginada do Alertas de Risco de acordo com as pages */}
+                <p className="text-[11px] text-red-700/80 mb-5 leading-relaxed font-medium">Exibindo histórico de risco da página {riscoPage}. Utilize opções abaixo em caso de fraude detectada.</p>
+                </article>  
                   <article className="bg-rose-50/30 p-6 rounded-3xl border border-rose-100 shadow-sm flex flex-col">
                      <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-bold text-rose-800 flex items-center gap-2"><Icons.AlertTriangle className="w-5 h-5 text-rose-500"/> Alertas de Risco</h4>
@@ -1916,31 +1976,46 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                   
                                   {/* COLUNA 1: PRODUTOS E PERSONALIZAÇÃO */}
                                   <div className="space-y-4">
-                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.Box className="w-4 h-4" /> Produtos ({pedido.itens?.length || 0})</p>
-                                      <div className="space-y-3">
-                                          {pedido.itens?.map((item, i) => (
-                                              <div key={i} className="flex gap-3 items-start bg-slate-50/50 p-3 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
-                                                  <img src={item.img} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 bg-white" alt=""/>
-                                                  <div className="flex flex-col flex-1">
-                                                      <span className="text-xs font-bold text-slate-800 leading-tight">{item.nome}</span>
-                                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
-                                                          <span className="text-[9px] font-black text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{item.qtd}x</span>
-                                                          <span className="text-[9px] font-bold text-slate-400 uppercase">SKU: {item.variacaoSku || item.sku || 'N/A'}</span>
-                                                      </div>
-                                                      {(item.variacao && item.variacao !== 'Padrão') && <span className="text-[10px] font-bold text-blue-600 mt-1">{item.variacao}</span>}
-                                                      
-                                                      {/* ITEM PERSONALIZADO NESTE HISTÓRICO */}
-                                                      {item.personalizacao && (
-                                                          <div className="mt-2 bg-indigo-50/40 border border-indigo-100 p-2.5 rounded-lg text-[10px] text-slate-700">
-                                                              <span className="font-black text-indigo-700 uppercase tracking-widest block mb-1">✍️ Personalizado</span>
-                                                              {item.personalizacao.texto && <p className="mb-1">Texto: <span className="font-medium italic">"{item.personalizacao.texto}"</span></p>}
-                                                              {item.personalizacao.imagem && <a href={item.personalizacao.imagem} download target="_blank" rel="noreferrer" className="text-indigo-600 hover:text-indigo-800 hover:underline font-bold mt-1 flex items-center gap-1"><Icons.Download className="w-3 h-3" /> Baixar Imagem</a>}
-                                                          </div>
-                                                      )}
-                                                  </div>
-                                              </div>
-                                          ))}
-                                      </div>
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.Box className="w-4 h-4" /> Produtos ({pedido.itens?.length || 0})</p>                          
+                                        <div className="space-y-3">
+                                            {pedidos.map(produto => (
+                                                <div key={produto.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all">
+                                                    {/* Header Mínimo (Sempre Visível) */}
+                                                    <div 
+                                                        onClick={() => setProdutoExpandido(produtoExpandido === produto.id ? null : produto.id)} 
+                                                        className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <img src={produto.imagem} className="w-10 h-10 rounded-lg object-cover" />
+                                                            <div>
+                                                                <p className="text-sm font-bold text-slate-800">{produto.nome}</p>
+                                                                <p className="text-[10px] text-slate-500">ID: #{produto.id} - Clique para expandir detalhes</p>
+                                                            </div>
+                                                        </div>
+                                                        <Icons.ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${produtoExpandido === produto.id ? 'rotate-90' : ''}`} />
+                                                    </div>
+
+                                                    {/* Conteúdo Expandido */}
+                                                    <AnimatePresence>
+                                                        {produtoExpandido === produto.id && (
+                                                            <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden bg-slate-50 border-t border-slate-100">
+                                                                <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                                                    <div>
+                                                                        <span className="block text-slate-400 font-bold mb-1 uppercase">Preço</span>
+                                                                        <span className="font-bold text-slate-700">{formatCurrency(produto.preco)}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span className="block text-slate-400 font-bold mb-1 uppercase">Desconto Aplicado</span>
+                                                                        <span className="font-bold text-emerald-600">{produto.desconto}</span>
+                                                                    </div>
+                                                                    {/* Mais detalhes que ficariam gigantes na tela... */}
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            ))}
+                                        </div>
                                   </div>
 
                                   {/* COLUNA 2: LOGÍSTICA E ENDEREÇO */}
