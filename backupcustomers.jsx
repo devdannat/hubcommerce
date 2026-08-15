@@ -7,17 +7,6 @@
 
 import React, { useState, useMemo, useRef, useEffect, Component } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../api';
-// Instância global do React Query (Mantém os dados em cache)
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false, 
-      staleTime: 1000 * 60 * 5, // Cache dura 5 minutos
-    },
-  },
-});
 
 // ==========================================
 // 1. DICIONÁRIO COMPLETO DE ÍCONES (a11y)
@@ -60,9 +49,7 @@ const Icons = {
   Repeat: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
   Mail: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
   Key: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
-  Download: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
-  Crown: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>,
-  Refresh: ({className="w-5 h-5"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+  Download: ({className="w-4 h-4"}) => <svg aria-hidden="true" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
 };
 
 // ==========================================
@@ -265,188 +252,74 @@ const AnimatedNotification = ({ show, status, titulo }) => (
       )}
   </AnimatePresence>
 );
+
+// ==========================================
+// 4. MOCK DE DADOS ENRIQUECIDOS (CRM)
+// ==========================================
+const gerarClientes = () => {
+  const clientes = [];
+  
+  // Cliente Modelo Completo
+  clientes.push({
+    id: 1, nome: 'João Silva', email: 'joao.silva@email.com', telefone: '+55 11 98888-7777', cpf: '111.222.333-44', nascimento: '1985-10-20',
+    dataCadastro: '2025-11-15', origem: 'Busca Orgânica', ultimaCompra: '2026-08-25', compras: 5, produtosComprados: 12,
+    cuponsUsados: 2, descontoFrete: 15.50, descontoLoja: 50.00, ltv: 2450.00, coins: 450, cashback: 25.50,
+    reembolsosPagos: 1, produtosReembolsados: 2,
+    status: 'ATIVO', rank: 'Ouro', ultimaCompraValor: 350.00, ultimaCompraPagamento: 'PIX', primeiraCompraFeita: true, reembolsado: false,
+    tags: ['Cliente Fiel', 'Amante de Eletrônicos'], notas: 'O cliente prefere entregas no período da manhã.',
+    enderecos: [
+        { padrao: true, uf: 'SP', cidade: 'São Paulo', rua: 'Avenida Paulista', num: '1000', bairro: 'Bela Vista', complemento: 'Apt 150', referencia: 'Próximo ao MASP', cep: '01310-100' },
+        { padrao: false, uf: 'RJ', cidade: 'Rio de Janeiro', rua: 'Rua das Flores', num: '22', bairro: 'Copacabana', complemento: 'Casa 2', referencia: '', cep: '22000-000' }
+    ],
+    auditLogs: [
+        { id: 1, data: '2026-08-25T14:30:00Z', titulo: 'Pedido Finalizado no Checkout', desc: 'Transação confirmada via PIX.', tipo: 'success' },
+        { id: 2, data: '2026-08-25T14:15:00Z', titulo: 'Sessão iniciada', desc: 'Login efetuado via Dispositivo Mobile (iPhone).', tipo: 'info' },
+        { id: 3, data: '2026-05-10T10:00:00Z', titulo: 'Alteração de Endereço', desc: 'Cliente adicionou novo endereço RJ.', tipo: 'warning' },
+        { id: 4, data: '2025-11-15T09:00:00Z', titulo: 'Conta de Cliente Criada', desc: 'Cadastro efetuado na loja (Busca Orgânica).', tipo: 'default' }
+    ]
+  });
+
+  // Clientes Aleatórios
+  for (let i = 2; i <= 65; i++) {
+    const hasBought = i % 3 !== 0;
+    let rank = 'Bronze';
+    if(hasBought) {
+        if (i % 5 === 0) rank = 'Diamante';
+        else if (i % 4 === 0) rank = 'Platina';
+        else if (i % 3 === 0) rank = 'Ouro';
+        else rank = 'Prata';
+    }
+
+    clientes.push({
+      id: i, nome: `Cliente Demo ${i}`, email: `cliente${i}@email.com`, telefone: `+55 11 98888-${String(i).padStart(4, '0')}`,
+      cpf: `111.222.333-${String(i).padStart(2, '0')}`, nascimento: `199${i%9}-01-01`, dataCadastro: `2025-11-${String((i % 28) + 1).padStart(2, '0')}`, origem: 'Orgânico',
+      ultimaCompra: hasBought ? `2026-08-${String((i % 28) + 1).padStart(2, '0')}` : '-', compras: hasBought ? (i % 8) + 1 : 0,
+      produtosComprados: hasBought ? (i % 12) + 2 : 0, cuponsUsados: hasBought ? (i % 4) : 0,
+      descontoFrete: hasBought ? i * 2.50 : 0, descontoLoja: hasBought ? i * 5.00 : 0, ltv: hasBought ? 250.00 * (i * 1.2) : 0,
+      reembolsosPagos: hasBought && i % 6 === 0 ? 1 : 0, produtosReembolsados: hasBought && i % 6 === 0 ? 1 : 0,
+      coins: hasBought ? 50 * i : 0, cashback: hasBought ? 15.50 * i : 0, status: i % 7 === 0 ? 'INATIVO' : 'ATIVO',
+      rank: rank,
+      ultimaCompraValor: hasBought ? 120.00 * ((i % 3) + 1) : 0, ultimaCompraPagamento: i % 2 === 0 ? 'Cartão' : 'PIX',
+      primeiraCompraFeita: hasBought, reembolsado: hasBought && i % 6 === 0,
+      tags: hasBought ? ['Comprador Ativo'] : ['Lead'], notas: '',
+      enderecos: hasBought ? [{ padrao: true, uf: 'MG', cidade: 'Belo Horizonte', rua: 'Rua Exemplo', num: '123', bairro: 'Centro', complemento: '', referencia: '', cep: '30000-000' }] : [],
+      auditLogs: hasBought ? [
+        { id: 1, data: `2026-08-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`, titulo: 'Pedido Finalizado', desc: 'Compra realizada no sistema.', tipo: 'success' },
+        { id: 2, data: `2025-11-${String((i % 28) + 1).padStart(2, '0')}T09:00:00Z`, titulo: 'Conta Criada', desc: 'Cadastro pelo site.', tipo: 'default' }
+      ] : [{ id: 1, data: `2025-11-${String((i % 28) + 1).padStart(2, '0')}T09:00:00Z`, titulo: 'Conta Criada', desc: 'Cadastro pelo site.', tipo: 'default' }]
+    });
+  }
+  return clientes;
+};
+
+const mockClientesGerais = gerarClientes();
+const MAX_LTV_GERAL = mockClientesGerais.length > 0 ? Math.max(...mockClientesGerais.map(c => safeNum(c.ltv))) : 0;
+const MAX_COMPRA_GERAL = mockClientesGerais.length > 0 ? Math.max(...mockClientesGerais.map(c => safeNum(c.ultimaCompraValor))) : 0;
+
 // ============================================================================
 // COMPONENTE CORE: CONTEÚDO PRINCIPAL MODULAR
 // ============================================================================
 const AdminCustomersContent = ({ mainTab, setMainTab }) => {
-  const queryClientLocal = useQueryClient(); // Para invalidar dados pós-mutação
-
-  // 1. Métricas do Dashboard Reais
-  const { data: metricasReais } = useQuery({
-      queryKey: ['dashboardMetrics'],
-      queryFn: async () => {
-          const res = await api.get('/admin/customers/metrics');
-          return res.data;
-      }
-  });
-  // 2. Níveis VIP do Banco
-  const { data: niveisVIPDaApi = [] } = useQuery({
-      queryKey: ['vipLevels'],
-      queryFn: async () => {
-          const res = await api.get('/admin/customers/vip-levels');
-          return res.data.data;
-      }
-  });
-
-    const mutacaoSalvarVip = useMutation({
-      mutationFn: async (payload) => {
-          const formData = new FormData();
-          if (payload.id) formData.append('id', payload.id);
-          formData.append('nome', payload.nome);
-          formData.append('is_default', payload.is_default ? 1 : 0);
-          formData.append('gasto_requisito', payload.gasto_requisito);
-          formData.append('compras_requisito', payload.compras_requisito);
-          formData.append('mult_coins', payload.mult_coins);
-          formData.append('desc_frete', payload.desc_frete);
-          formData.append('desc_produtos', payload.desc_produtos);
-          formData.append('acumula_frete', payload.acumula_frete ? 1 : 0);
-          formData.append('frequencia_uso', payload.frequencia_uso);
-          formData.append('limite_uso', payload.limite_uso);
-          if (payload.imagemFile) formData.append('imagem', payload.imagemFile);
-
-          return await api.post('/admin/customers/vip-levels', formData, { headers: { 'Content-Type': 'multipart/form-data' }});
-      },
-      onSuccess: () => {
-          queryClientLocal.invalidateQueries({ queryKey: ['vipLevels'] }); 
-          showToast('Nível VIP salvo com sucesso!');
-          setModalVIP({ isOpen: false, isNovo: true, data: defaultVIP, imagemFile: null });
-      },
-      onError: (error) => alert('Erro ao salvar VIP: ' + (error.response?.data?.message || error.message))
-  });
-
-  const salvarVIPReal = () => {
-      const data = modalVIP.data;
-      if (!data.nome.trim()) return alert("O nome do nível é obrigatório.");
-
-      const payload = {
-          id: modalVIP.isNovo ? null : data.id,
-          nome: data.nome,
-          is_default: data.isDefault,
-          gasto_requisito: parseCommaFloat(data.gastoRequisito),
-          compras_requisito: safeNum(data.comprasRequisito),
-          mult_coins: parseCommaFloat(data.multCoins),
-          desc_frete: parseCommaFloat(data.descFrete),
-          desc_produtos: parseCommaFloat(data.descProdutos),
-          acumula_frete: data.acumulaFrete,
-          frequencia_uso: data.frequenciaUso,
-          limite_uso: safeNum(data.limiteUso),
-          imagemFile: modalVIP.imagemFile // Envia a imagem física!
-      };
-
-      setSavingState('saveVip');
-      mutacaoSalvarVip.mutate(payload, { onSettled: () => setSavingState(null) });
-  };
-
-  // 4. Mutação para Excluir Nível VIP
-  const mutacaoExcluirVip = useMutation({
-      mutationFn: async (id) => await api.delete(`/admin/customers/vip-levels/${id}`),
-        // MUDE PARA:
-        onSuccess: () => {
-            queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); 
-            showToast('Telefone atualizado com sucesso!'); // <-- Função Nova!
-            setPhoneFlow({ novoTelefone: '', motivo: '' });
-        },
-      onError: (error) => alert('Erro ao excluir VIP: ' + (error.response?.data?.message || error.message))
-  });
-
-  const excluirVIPReal = (id) => {
-      if (window.confirm("Deseja realmente excluir este nível?")) {
-          mutacaoExcluirVip.mutate(id);
-      }
-  };
-
-  // Mutação Real para Anotações
-  const mutacaoNotas = useMutation({
-      mutationFn: async (notas) => await api.put(`/admin/customers/${clienteSelecionado.id}/notes`, { notas }),
-      onSuccess: () => {
-          queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); // <-- Isso faz o TEMPO REAL acontecer!
-          showToast('Anotações internas salvas!');
-      },
-      onError: () => alert('Erro ao salvar as anotações.')
-  });
-
-  const salvarNotasAPI = () => {
-      setSavingState('notas');
-      mutacaoNotas.mutate(clienteSelecionado.notas, { onSettled: () => setSavingState(null) });
-  };
-
-    // Mutação Real para Tags
-  const mutacaoTags = useMutation({
-      mutationFn: async (novasTags) => await api.put(`/admin/customers/${clienteSelecionado.id}/tags`, { tags: novasTags }),
-      onSuccess: () => {
-          queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); // Faz a mágica do tempo real
-          showToast('Tags atualizadas e salvas no sistema!');
-      },
-      onError: () => alert('Erro ao salvar as etiquetas.')
-  });
- // ==========================================
-  // CONVERSOR DE DADOS VINDOS DO LARAVEL
-  // ==========================================
-  // O Laravel manda "gasto_requisito", essa função traduz para "gastoRequisito" pro visual não quebrar
-  const niveisVIPConvertidos = useMemo(() => {
-      if (!niveisVIPDaApi) return [];
-      return niveisVIPDaApi.map(nivel => ({
-          id: nivel.id,
-          nome: nivel.nome,
-          isDefault: Boolean(nivel.is_default),
-          gastoRequisito: formatCommaFloat(nivel.gasto_requisito),
-          comprasRequisito: nivel.compras_requisito,
-          multCoins: formatCommaFloat(nivel.mult_coins),
-          descFrete: formatCommaFloat(nivel.desc_frete),
-          descProdutos: formatCommaFloat(nivel.desc_produtos),
-          acumulaFrete: Boolean(nivel.acumula_frete),
-          frequenciaUso: nivel.frequencia_uso,
-          limiteUso: nivel.limite_uso,
-          imagem: nivel.imagem
-      }));
-  }, [niveisVIPDaApi]);
-
-
-  // 5. Configurações da Loja
-  const { data: configDaApi } = useQuery({
-      queryKey: ['crmSettings'],
-      queryFn: async () => {
-          const res = await api.get('/admin/customers/settings');
-          return res.data.data;
-      }
-  });
-  
-  // Sincroniza a tela com as configurações vindas do banco de dados
-  useEffect(() => {
-      if (configDaApi) {
-          setConfig({
-              permiteCadastro: Boolean(configDaApi.permite_cadastro),
-              loginApenasConvite: Boolean(configDaApi.login_apenas_convite),
-              aprovarComentarios: Boolean(configDaApi.aprovar_comentarios),
-              bloquearForaDoPais: Boolean(configDaApi.bloquear_fora_do_pais)
-          });
-      }
-  }, [configDaApi]);
-
-    const mutacaoSalvarConfig = useMutation({
-      mutationFn: async (payload) => await api.put('/admin/customers/settings', payload),
-        // MUDE PARA:
-        onSuccess: () => {
-            queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); 
-            showToast('Telefone atualizado com sucesso!'); // <-- Função Nova!
-            setPhoneFlow({ novoTelefone: '', motivo: '' });
-        },
-      onError: (error) => alert('Erro ao salvar configurações: ' + (error.response?.data?.message || error.message))
-  });
-
-    const salvarConfiguracoesReais = () => {
-      // Traduz os nomes para o Laravel antes de enviar
-      const payload = {
-          permite_cadastro: config.permiteCadastro,
-          login_apenas_convite: config.loginApenasConvite,
-          aprovar_comentarios: config.aprovarComentarios,
-          bloquear_fora_do_pais: config.bloquearForaDoPais
-      };
-
-      setSavingState('saveConfig');
-      mutacaoSalvarConfig.mutate(payload, { onSettled: () => setSavingState(null) });
-  };
-
   // CRM In-Page State
   const [crmSubTab, setCrmSubTab] = useState('RESUMO');
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
@@ -454,18 +327,61 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
   
   // Modais State (First Page UX)
   const [perfilEmEdicao, setPerfilEmEdicao] = useState(false);
-  const [modalSuspensao, setModalSuspensao] = useState({ isOpen: false, acao: 'SUSPENDER', motivo: '', arquivo: null }); // acao pode ser 'SUSPENDER' ou 'REATIVAR'
   
-  // --- LÓGICA DE SEGURANÇA, EDIÇÃO IN-PAGE E AUDITORIA ---
+// --- LÓGICA DE SEGURANÇA, EDIÇÃO IN-PAGE E AUDITORIA ---
+  // Fluxo de E-mail
   const [emailFlow, setEmailFlow] = useState({ ativo: false, step: 1, novoEmail: '', motivo: '' });
   const [emailEditFlow, setEmailEditFlow] = useState({ cooldown: 0, attempts: 0, lockedUntil: null }); // Relógio e travas
+
+  // Fluxo de Telefone
   const [phoneFlow, setPhoneFlow] = useState({ novoTelefone: '', motivo: '' });
-  const [walletFlow, setWalletFlow] = useState({ tipo: 'Hub Coins', valor: '', motivo: '' });
+
+  // Fluxo de Senha Provisória (com expiração)
   const [senhaTemp, setSenhaTemp] = useState({ codigo: null, expiraEm: null });
+
+  // Relógio ao vivo para a Senha Provisória
   const [tempoRestanteSenha, setTempoRestanteSenha] = useState('');
+
+  useEffect(() => {
+      if (!senhaTemp.expiraEm) return;
+
+      const atualizaCronometro = () => {
+          const agora = new Date().getTime();
+          const distancia = senhaTemp.expiraEm.getTime() - agora;
+
+          if (distancia <= 0) {
+              setTempoRestanteSenha('Expirada');
+              // Opcional: apagar a senha se o tempo zerar
+              // setSenhaTemp({ codigo: null, expiraEm: null });
+          } else {
+              const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+              const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
+              // Formata para ter sempre 2 dígitos (ex: 06m 09s)
+              setTempoRestanteSenha(`${String(minutos).padStart(2, '0')}m ${String(segundos).padStart(2, '0')}s`);
+          }
+      };
+
+      atualizaCronometro(); // Atualiza na hora
+      const interval = setInterval(atualizaCronometro, 1000); // Desce a cada segundo
+      return () => clearInterval(interval);
+  }, [senhaTemp.expiraEm]);
+  
+  // Fluxo de Dados Sensíveis
   const [docSensivel, setDocSensivel] = useState({ cpf: '', nascimento: '', arquivo: null });
 
-  // Cronômetro para o botão de E-mail (Corrigido para descer exatos 1s)
+  // Função Central de Auditoria (Gera Logs automaticamente)
+  const registrarLog = (titulo, desc, tipo = 'default') => {
+      const newLog = {
+          id: Date.now(),
+          data: new Date().toISOString(), // Data e horário atual
+          titulo: titulo,
+          desc: `${desc} (Admin Responsável: Gestor Padrão)`,
+          tipo: tipo
+      };
+      setClienteSelecionado(prev => ({...prev, auditLogs: [newLog, ...(prev.auditLogs || [])]}));
+  };
+
+// Cronômetro para o botão de E-mail (Corrigido para descer exatos 1s)
   useEffect(() => {
       if (emailEditFlow.cooldown > 0) {
           const timer = setTimeout(() => {
@@ -474,58 +390,9 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
           return () => clearTimeout(timer);
       }
   }, [emailEditFlow.cooldown]);
+// --- FUNÇÕES DE SEGURANÇA E AÇÕES ---
 
-  // Relógio ao vivo para a Senha Provisória
-  useEffect(() => {
-      if (!senhaTemp.expiraEm) return;
-      const atualizaCronometro = () => {
-          const agora = new Date().getTime();
-          const distancia = senhaTemp.expiraEm.getTime() - agora;
-
-          if (distancia <= 0) {
-              setTempoRestanteSenha('Expirada');
-          } else {
-              const minutos = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
-              const segundos = Math.floor((distancia % (1000 * 60)) / 1000);
-              setTempoRestanteSenha(`${String(minutos).padStart(2, '0')}m ${String(segundos).padStart(2, '0')}s`);
-          }
-      };
-      atualizaCronometro(); // Atualiza na hora
-      const interval = setInterval(atualizaCronometro, 1000); // Desce a cada segundo
-      return () => clearInterval(interval);
-  }, [senhaTemp.expiraEm]);
-
-// 5. Ações de Tags (Conectadas ao Banco)
-  const adicionarTag = () => {
-      if (novaTag.trim() && clienteSelecionado) {
-          const tagFormatada = novaTag.trim();
-          const tagsAtuais = clienteSelecionado.tags || [];
-
-          if (!tagsAtuais.includes(tagFormatada)) {
-              const novasTags = [...tagsAtuais, tagFormatada];
-              
-              // Atualiza visualmente na mesma hora (Optimistic Update)
-              setClienteSelecionado(prev => ({ ...prev, tags: novasTags }));
-              
-              // Dispara para o servidor do Laravel salvar no banco
-              mutacaoTags.mutate(novasTags);
-          }
-          setNovaTag(''); // Limpa o input
-      }
-  };
-
-    const removerTag = (tagParaRemover) => {
-      if (clienteSelecionado) {
-          const novasTags = (clienteSelecionado.tags || []).filter(t => t !== tagParaRemover);
-          
-          // Atualiza visualmente
-          setClienteSelecionado(prev => ({ ...prev, tags: novasTags }));
-          
-          // Dispara para o servidor do Laravel remover do banco
-          mutacaoTags.mutate(novasTags);
-      }
-  };
-  // --- FUNÇÕES DE SEGURANÇA E AÇÕES ---
+  // 1. Ações de E-mail
   const avancarEmailStep2 = () => {
       if (!emailFlow.motivo.trim()) return alert("Obrigatório: Preencha o motivo da alteração.");
       setEmailFlow(prev => ({ ...prev, step: 2 }));
@@ -552,202 +419,107 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       }
   };
 
-    // ===========================================================================
-  // ---> INTEGRAÇÃO BACKEND: MUTAÇÕES REAIS (SALVANDO NO BANCO DE DADOS) <---
-  // ===========================================================================
-
-  // 1. Atualizar Telefone
-  const mutacaoTelefone = useMutation({
-      mutationFn: async (dados) => await api.put(`/admin/customers/${clienteSelecionado.id}/phone`, dados),
-        // MUDE PARA:
-        onSuccess: () => {
-            queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); 
-            showToast('Telefone atualizado com sucesso!'); // <-- Função Nova!
-            setPhoneFlow({ novoTelefone: '', motivo: '' });
-        },
-      onError: (error) => alert('Erro: ' + (error.response?.data?.message || 'Falha ao atualizar telefone'))
-  });
-
+  // 2. Ações de Telefone
   const salvarTelefone = () => {
       if (!phoneFlow.motivo.trim()) return alert("Obrigatório: Preencha o motivo da alteração.");
       if (!phoneFlow.novoTelefone.trim()) return alert("Digite o novo telefone.");
 
-      setSavingState('savePhone');
-      mutacaoTelefone.mutate(
-          { telefone: phoneFlow.novoTelefone, motivo: phoneFlow.motivo },
-          { onSettled: () => setSavingState(null) }
-      );
+      triggerAcao('savePhone', 'Telefone atualizado com sucesso!');
+      registrarLog('Alteração de Telefone/WhatsApp', `De: ${clienteSelecionado.telefone} Para: ${phoneFlow.novoTelefone}. Motivo: ${phoneFlow.motivo}`, 'warning');
+      setClienteSelecionado(prev => ({ ...prev, telefone: phoneFlow.novoTelefone }));
+      setPhoneFlow({ novoTelefone: '', motivo: '' }); // reseta
   };
 
-  // 2. Atualizar Dados Sensíveis (Com upload de arquivo - FormData)
-  const mutacaoDadosSensiveis = useMutation({
-      mutationFn: async (formData) => await api.post(`/admin/customers/${clienteSelecionado.id}/sensitive-data`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' } // Obrigatório para enviar arquivos (PDF/Imagens)
-      }),
-        // MUDE PARA:
-        onSuccess: () => {
-            queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); 
-            showToast('Telefone atualizado com sucesso!'); // <-- Função Nova!
-            setPhoneFlow({ novoTelefone: '', motivo: '' });
-        },
-      onError: (error) => alert('Erro: ' + (error.response?.data?.message || 'Falha no envio do documento'))
-  });
-
+  // 3. Ações de Dados Sensíveis (CPF / Nasc)
   const salvarDadosSensiveis = () => {
-      if (!docSensivel.arquivo) return alert("Obrigatório: Anexe o documento oficial para validar a alteração.");
+      if (!docSensivel.arquivo) return alert("Obrigatório: Anexe o documento oficial para validar a alteração sensível.");
       
-      setSavingState('saveDocs');
-      const formData = new FormData();
-      formData.append('arquivo', docSensivel.arquivo);
-      if (docSensivel.cpf) formData.append('cpf', docSensivel.cpf);
-      if (docSensivel.nascimento) formData.append('nascimento', docSensivel.nascimento);
-
-      mutacaoDadosSensiveis.mutate(formData, { onSettled: () => setSavingState(null) });
+      triggerAcao('saveDocs', 'Dados sensíveis atualizados mediante documento.');
+      registrarLog('Alteração de Dados Sensíveis', `CPF ou Nascimento alterados. Documento anexado: ${docSensivel.arquivo.name}.`, 'warning');
+      
+      if(docSensivel.cpf) setClienteSelecionado(prev => ({ ...prev, cpf: docSensivel.cpf }));
+      if(docSensivel.nascimento) setClienteSelecionado(prev => ({ ...prev, nascimento: docSensivel.nascimento }));
+      setDocSensivel({ cpf: '', nascimento: '', arquivo: null }); // reseta
   };
 
-  // 3. Gerar Senha Provisória
-  const mutacaoSenha = useMutation({
-      mutationFn: async () => await api.post(`/admin/customers/${clienteSelecionado.id}/generate-temp-password`),
-      onSuccess: (response) => {
-          queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] });
-          const expiraEm = new Date(new Date().getTime() + 7 * 60000); // 7 minutos
-          setSenhaTemp({ codigo: response.data.password, expiraEm }); // Pega a senha gerada pelo Laravel
-          setToast({ show: true, message: response.data.message, status: 'success' });
-      },
-      onError: () => alert('Erro ao gerar senha provisória.')
-  });
-
+  // 4. Ações de Senha e Recuperação
   const gerarSenhaProvisoria = () => {
-      setSavingState('gerarSenha');
-      mutacaoSenha.mutate(null, { onSettled: () => setSavingState(null) });
+      triggerAcao('gerarSenha', 'Senha gerada! Expira em 7 minutos.');
+      const novaSenha = 'HUB' + Math.floor(1000 + Math.random() * 9000) + '@#';
+      const expiraEm = new Date(new Date().getTime() + 7 * 60000); // <-- Alterado para 7 minutos
+      setSenhaTemp({ codigo: novaSenha, expiraEm });
+      registrarLog('Senha Provisória Gerada', 'Nova credencial temporária gerada (Validade: 7 minutos). Cliente forçado a trocar.', 'warning');
   };
 
-  // 4. Bloquear / Reativar Conta (Suspensão)
-  const mutacaoSuspensao = useMutation({
-      mutationFn: async (dados) => await api.post(`/admin/customers/${clienteSelecionado.id}/suspend`, dados),
-      onSuccess: (response) => {
-          queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] });
-          setToast({ show: true, message: response.data.message, status: 'success' });
-          setModalSuspensao({ isOpen: false, acao: 'SUSPENDER', motivo: '', arquivo: null });
-      },
-      onError: () => alert('Erro ao alterar status da conta.')
-  });
-
-  const handleConfirmarSuspensao = () => {
-      if (!modalSuspensao.motivo.trim()) return alert("O motivo é obrigatório para manter o registro de auditoria.");
-      
-      setSavingState('bloqueio');
-      mutacaoSuspensao.mutate(
-          { acao: modalSuspensao.acao, motivo: modalSuspensao.motivo },
-          { onSettled: () => setSavingState(null) }
-      );
-  };
-    // 5. Adicionar Saldo Manual (Livro Razão)
-  const mutacaoCarteira = useMutation({
-      mutationFn: async (dados) => await api.post(`/admin/customers/${clienteSelecionado.id}/wallet-transaction`, dados),
-      onSuccess: (response) => {
-          queryClientLocal.invalidateQueries({ queryKey: ['clientesCRM'] }); // Atualiza a tela com o novo saldo!
-          setToast({ show: true, message: response.data.message, status: 'success' });
-          setWalletFlow({ tipo: 'Hub Coins', valor: '', motivo: '' }); // Limpa os campos
-      },
-      onError: (error) => alert('Erro: ' + (error.response?.data?.message || 'Falha ao processar transação'))
-  });
-
-  const processarTransacaoWallet = () => {
-      if (!walletFlow.valor || walletFlow.valor <= 0) return alert("Digite um valor válido maior que zero.");
-      if (!walletFlow.motivo.trim()) return alert("O motivo é obrigatório para manter o registro de auditoria.");
-
-      setSavingState('transacao');
-      mutacaoCarteira.mutate(
-          { tipo: walletFlow.tipo, valor: walletFlow.valor, motivo: walletFlow.motivo },
-          { onSettled: () => setSavingState(null) }
-      );
-  };
   const enviarLinkRecuperacao = () => {
-      triggerAcao('recuperaEmail', 'E-mail de recuperação enviado!'); // Manteremos o trigger falso até ter disparador de e-mail pronto
+      triggerAcao('recuperaEmail', 'E-mail de recuperação enviado!');
+      registrarLog('Recuperação de Senha Enviada', `Link enviado direto para o e-mail: ${clienteSelecionado.email}`, 'info');
   };
 
   const copiarLinkRecuperacao = () => {
-      triggerAcao('copiaLink', 'Link copiado para a área de transferência!'); // Copiar link não precisa de banco de dados
+      triggerAcao('copiaLink', 'Link copiado para a área de transferência!');
+      registrarLog('Link de Recuperação Gerado', `Link copiado manualmente pelo gestor.`, 'info');
   };
-
+  // Filtro de Aniversário no Diretório
+  const [filtroMesAniv, setFiltroMesAniv] = useState('TODOS');
+  const [modalSuspensao, setModalSuspensao] = useState({ isOpen: false, acao: 'SUSPENDER', motivo: '', arquivo: null }); // acao pode ser 'SUSPENDER' ou 'REATIVAR'
+  
   // States Globais de UI
   const [savingState, setSavingState] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '' });
-  // Helper para mostrar e esconder a notificação automaticamente
-  const showToast = (message, status = 'success') => {
-      setToast({ show: true, message, status });
-      setTimeout(() => setToast({ show: false, message: '', status: '' }), 3000);
-  };
   const [showRevenue, setShowRevenue] = useState(false);
   const [showMetricsHelp, setShowMetricsHelp] = useState(false);
   const [showConfigHelp, setShowConfigHelp] = useState(false);
 
-  // Filtros Globais
+  // Filtros Dashboard Principal
   const [dashDateOpen, setDashDateOpen] = useState(false);
   const [dashDateRange, setDashDateRange] = useState({ start: '', end: '' });
   const [dashFilterText, setDashFilterText] = useState('Todo o Período');
+
+  // Filtros Ranking
   const [rankDateOpen, setRankDateOpen] = useState(false);
   const [rankDateRange, setRankDateRange] = useState({ start: '', end: '' });
   const [topClientsCount, setTopClientsCount] = useState(5);
   const [maxLTVFiltro, setMaxLTVFiltro] = useState(''); 
   const [qtdProdutosFiltro, setQtdProdutosFiltro] = useState('');
+
+  // Filtros Últimas Compras
   const [recentDateOpen, setRecentDateOpen] = useState(false);
   const [recentDateRange, setRecentDateRange] = useState({ start: '', end: '' });
   const [ultimasMaxCompra, setUltimasMaxCompra] = useState('');
   const [ultimasQtdProd, setUltimasQtdProd] = useState('');
 
+  // Tabelas Globais
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroStatusCRM, setFiltroStatusCRM] = useState('TODOS');
-  const [filtroMesAniv, setFiltroMesAniv] = useState('TODOS');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10); 
   const [registrosPage, setRegistrosPage] = useState(1);
   const [registrosPerPage, setRegistrosPerPage] = useState(10);
+
+  // Paginacao da Timeline (Audit Log)
   const [timelinePage, setTimelinePage] = useState(1);
   const timelinePerPage = 10;
   const [timelineDateOpen, setTimelineDateOpen] = useState(false);
   const [timelineDateRange, setTimelineDateRange] = useState({ start: '', end: '' });
-  const [loadingTimeline, setLoadingTimeline] = useState(false);
-  
-  // 🟢 Estados do Histórico de Pedidos
-  const [orderHistoryPage, setOrderHistoryPage] = useState(1);
-  const [orderHistoryDateOpen, setOrderHistoryDateOpen] = useState(false);
-  const [orderHistoryDateRange, setOrderHistoryDateRange] = useState({ start: '', end: '' });
-  const orderHistoryPerPage = 5;
 
-  // 🟢 Estados da Classificação Automática (Rank VIP)
-  const [rankTimelinePage, setRankTimelinePage] = useState(1);
-  const rankTimelinePerPage = 5;
-  // Estados Dinâmicos VIP e Configs
- 
+  // Estados Dinâmicos: Benefícios (Níveis VIP)
+  const [niveisVIP, setNiveisVIP] = useState([
+      { id: 1, nome: 'Bronze', gastoRequisito: "0", comprasRequisito: 0, multCoins: "1,0", descFrete: "0", descProdutos: "0", imagem: null, frequenciaUso: 'ILIMITADO', limiteUso: 0, acumulaFrete: false, isDefault: true },
+      { id: 2, nome: 'Prata', gastoRequisito: "1000", comprasRequisito: 4, multCoins: "1,5", descFrete: "0", descProdutos: "5", imagem: null, frequenciaUso: 'ILIMITADO', limiteUso: 0, acumulaFrete: false, isDefault: false },
+      { id: 3, nome: 'Ouro', gastoRequisito: "2500", comprasRequisito: 6, multCoins: "2,0", descFrete: "50", descProdutos: "10", imagem: null, frequenciaUso: 'MENSAL', limiteUso: 2, acumulaFrete: false, isDefault: false },
+      { id: 4, nome: 'Diamante', gastoRequisito: "5000", comprasRequisito: 10, multCoins: "3,0", descFrete: "100", descProdutos: "15", imagem: null, frequenciaUso: 'MENSAL', limiteUso: 5, acumulaFrete: true, isDefault: false }
+  ]);
   const defaultVIP = { id: 0, nome: '', gastoRequisito: "0", comprasRequisito: 0, multCoins: "1,0", descFrete: "0", descProdutos: "0", imagem: null, frequenciaUso: 'ILIMITADO', limiteUso: 0, acumulaFrete: false, isDefault: false };
   const [modalVIP, setModalVIP] = useState({ isOpen: false, isNovo: true, data: defaultVIP });
+
+  // Estados Dinâmicos: Configurações Gerais
   const [config, setConfig] = useState({ permiteCadastro: true, aprovarComentarios: false, bloquearForaDoPais: false, loginApenasConvite: false });
-
-    // ==========================================
-  // BUSCA DE DADOS INTELIGENTE COM REACT QUERY E POLLING
-  // ==========================================
-  const { data: listaClientesDaApi = [], isLoading: carregandoClientes, isFetching: isFetchingClients, refetch: refetchClients } = useQuery({
-      queryKey: ['clientesCRM'], 
-      queryFn: async () => {
-          const response = await api.get('/admin/customers');
-          return response.data.data; 
-      },
-      refetchInterval: 15000, // 🟢 Polling: Atualiza silenciosamente a cada 15 segundos!
-  });
-
-  // Sincronizador de Tempo Real: Se a API atualizar, a Gaveta atualiza junto!
-  useEffect(() => {
-      if (clienteSelecionado && listaClientesDaApi.length > 0) {
-          const clienteAtualizado = listaClientesDaApi.find(c => c.id === clienteSelecionado.id);
-          if (clienteAtualizado) setClienteSelecionado(clienteAtualizado);
-      }
-  }, [listaClientesDaApi]);
 
   const handleSearchChange = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
   const handleItemsPerPageChange = (e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); };
 
+  // Trigger UX de Sucesso
   const triggerAcao = (actionId, successMessage) => {
     if (savingState) return;
     setSavingState(actionId);
@@ -767,7 +539,19 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       setTimelineDateRange({start:'', end:''});
       if (typeof window !== 'undefined') { window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
-
+// --- LÓGICA DO CRONÔMETRO DE E-MAIL ---
+  useEffect(() => {
+      let timer;
+      if (emailEditFlow.cooldown > 0) {
+          timer = setInterval(() => {
+              setEmailEditFlow(prev => ({ ...prev, cooldown: prev.cooldown - 1 }));
+          }, 1000);
+      }
+      return () => clearInterval(timer);
+  }, [emailEditFlow.cooldown]);
+  // ==========================================
+  // LÓGICA DE DADOS (FILTROS)
+  // ==========================================
   const isDateInRange = (dateStr, range) => {
       if (!range.start || !range.end || !dateStr || dateStr === '-') return true;
       const d = new Date(dateStr).getTime();
@@ -776,30 +560,29 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       return d >= s && d <= e;
   };
 
-  // Cálculo das Variáveis Globais Max usando os dados da "API"
-  const maxLTVGeral = listaClientesDaApi.length > 0 ? Math.max(...listaClientesDaApi.map(c => safeNum(c.ltv))) : 0;
-  const maxCompraGeral = listaClientesDaApi.length > 0 ? Math.max(...listaClientesDaApi.map(c => safeNum(c.ultimaCompraValor))) : 0;
-
-  const clientesFiltrados = useMemo(() => {
-    return listaClientesDaApi.filter(c => {
+const clientesFiltrados = useMemo(() => {
+    return mockClientesGerais.filter(c => {
       const matchBusca = safeStr(c?.nome).toLowerCase().includes(safeStr(searchTerm).toLowerCase()) || 
                          safeStr(c?.email).toLowerCase().includes(safeStr(searchTerm).toLowerCase()) ||
                          safeStr(c?.cpf).includes(safeStr(searchTerm)) || 
                          safeStr(c?.telefone).includes(safeStr(searchTerm));
       const matchStatus = filtroStatusCRM === 'TODOS' || safeStr(c?.status) === filtroStatusCRM;
       
+      // Nova Lógica de Aniversário
       let matchAniversario = true;
       if (filtroMesAniv !== 'TODOS') {
           if (c.nascimento && c.nascimento !== '-') {
+              // c.nascimento é YYYY-MM-DD, então quebramos e pegamos o Mês [1]
               const mesCliente = c.nascimento.split('-')[1]; 
               matchAniversario = (mesCliente === filtroMesAniv);
           } else {
-              matchAniversario = false;
+              matchAniversario = false; // Se não tem data, não entra no filtro do mês
           }
       }
+
       return matchBusca && matchStatus && matchAniversario;
     });
-  }, [listaClientesDaApi, searchTerm, filtroStatusCRM, filtroMesAniv]);
+  }, [searchTerm, filtroStatusCRM, filtroMesAniv]); // <-- Não esqueça de adicionar a dependência aqui
 
   const totalPages = Math.ceil((clientesFiltrados?.length || 0) / itemsPerPage) || 1;
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -807,7 +590,7 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
   const clientesPaginados = (clientesFiltrados || []).slice(indexOfFirstItem, indexOfLastItem);
 
   const rankingClientesList = useMemo(() => {
-    return listaClientesDaApi
+    return mockClientesGerais
       .filter(c => safeNum(c?.ltv) >= 1) 
       .filter(c => maxLTVFiltro === '' ? true : safeNum(c?.ltv) <= safeNum(maxLTVFiltro))
       .filter(c => safeNum(c?.produtosComprados) >= 1) 
@@ -815,62 +598,40 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       .filter(c => isDateInRange(c.ultimaCompra, rankDateRange))
       .sort((a, b) => safeNum(b?.ltv) - safeNum(a?.ltv))
       .slice(0, safeNum(topClientsCount) || 5);
-  }, [listaClientesDaApi, topClientsCount, maxLTVFiltro, qtdProdutosFiltro, rankDateRange]);
+  }, [topClientsCount, maxLTVFiltro, qtdProdutosFiltro, rankDateRange]);
 
-const ultimasComprasListFiltrada = useMemo(() => {
-    return listaClientesDaApi
-      // 🟢 CORREÇÃO: Agora verifica se c.compras > 0 (A API manda esse dado corretamente)
-      .filter(c => safeNum(c?.compras) > 0 && safeNum(c?.ultimaCompraValor) >= 1) 
+  const ultimasComprasListFiltrada = useMemo(() => {
+    return mockClientesGerais
+      .filter(c => c?.primeiraCompraFeita && safeNum(c?.ultimaCompraValor) >= 1) 
       .filter(c => ultimasMaxCompra === '' ? true : safeNum(c?.ultimaCompraValor) <= safeNum(ultimasMaxCompra))
+      .filter(c => safeNum(c?.produtosComprados) >= 1) 
       .filter(c => ultimasQtdProd === '' ? true : safeNum(c?.produtosComprados) <= safeNum(ultimasQtdProd))
       .filter(c => isDateInRange(c.ultimaCompra, recentDateRange))
       .sort((a, b) => new Date(safeStr(b?.ultimaCompra)).getTime() - new Date(safeStr(a?.ultimaCompra)).getTime() || safeNum(b?.id) - safeNum(a?.id));
-  }, [listaClientesDaApi, ultimasMaxCompra, ultimasQtdProd, recentDateRange]);
+  }, [ultimasMaxCompra, ultimasQtdProd, recentDateRange]);
 
   const totalRegistrosPages = Math.ceil((ultimasComprasListFiltrada?.length || 0) / registrosPerPage) || 1;
   const registrosPaginados = (ultimasComprasListFiltrada || []).slice((registrosPage - 1) * registrosPerPage, registrosPage * registrosPerPage);
 
-  const ltvMedioCRM = listaClientesDaApi.length > 0 ? (listaClientesDaApi.reduce((acc, c) => acc + safeNum(c?.ltv), 0) / listaClientesDaApi.length) : 0;
-  const comprasTotaisCRM = listaClientesDaApi.reduce((acc, c) => acc + safeNum(c?.compras), 0);
-  const cashbackTotalCRM = listaClientesDaApi.reduce((acc, c) => acc + safeNum(c?.cashback), 0);
-  const coinsTotaisCRM = listaClientesDaApi.reduce((acc, c) => acc + safeNum(c?.coins), 0);
+  const ltvMedioCRM = mockClientesGerais.length > 0 ? (mockClientesGerais.reduce((acc, c) => acc + safeNum(c?.ltv), 0) / mockClientesGerais.length) : 0;
+  const comprasTotaisCRM = mockClientesGerais.reduce((acc, c) => acc + safeNum(c?.compras), 0);
+  const cashbackTotalCRM = mockClientesGerais.reduce((acc, c) => acc + safeNum(c?.cashback), 0);
+  const coinsTotaisCRM = mockClientesGerais.reduce((acc, c) => acc + safeNum(c?.coins), 0);
 
-// --- FILTROS DE TIMELINE E HISTÓRICO ---
+  // Lógica Timeline Cliente
   const auditLogsFiltrados = useMemo(() => {
       if(!clienteSelecionado || !clienteSelecionado.auditLogs) return [];
-      let logs = clienteSelecionado.auditLogs;
-      if (timelineDateRange.start) logs = logs.filter(log => new Date(log.data.split('T')[0]) >= new Date(timelineDateRange.start));
-      if (timelineDateRange.end) logs = logs.filter(log => new Date(log.data.split('T')[0]) <= new Date(timelineDateRange.end));
-      return logs.sort((a,b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+      return clienteSelecionado.auditLogs
+        .filter(log => {
+            // A data do log vem em formato ISO, cortamos apenas o YYYY-MM-DD para o filtro básico
+            const dateStr = log.data.split('T')[0];
+            return isDateInRange(dateStr, timelineDateRange);
+        })
+        .sort((a,b) => new Date(b.data).getTime() - new Date(a.data).getTime());
   }, [clienteSelecionado, timelineDateRange]);
 
   const totalTimelinePages = Math.ceil(auditLogsFiltrados.length / timelinePerPage) || 1;
   const auditLogsPaginados = auditLogsFiltrados.slice((timelinePage - 1) * timelinePerPage, timelinePage * timelinePerPage);
-
-  const aplicarFiltroTimeline = () => {
-      setIsTimelineModalOpen(false);
-      setLoadingTimeline(true);
-      setTimeout(() => setLoadingTimeline(false), 800);
-  };
-
-  const historicoPedidosFiltrado = useMemo(() => {
-      if(!clienteSelecionado || !clienteSelecionado.pedidos) return [];
-      let ped = clienteSelecionado.pedidos;
-      if (orderHistoryDateRange.start) ped = ped.filter(p => new Date(p.data_raw) >= new Date(orderHistoryDateRange.start));
-      if (orderHistoryDateRange.end) ped = ped.filter(p => new Date(p.data_raw) <= new Date(orderHistoryDateRange.end));
-      return ped.sort((a,b) => new Date(b.data_raw).getTime() - new Date(a.data_raw).getTime());
-  }, [clienteSelecionado, orderHistoryDateRange]);
-
-  const totalOrderHistoryPages = Math.ceil(historicoPedidosFiltrado.length / orderHistoryPerPage) || 1;
-  const orderHistoryPaginados = historicoPedidosFiltrado.slice((orderHistoryPage - 1) * orderHistoryPerPage, orderHistoryPage * orderHistoryPerPage);
-
-  const rankLogsFiltrados = useMemo(() => {
-      if(!clienteSelecionado || !clienteSelecionado.auditLogs) return [];
-      return clienteSelecionado.auditLogs.filter(l => l.titulo.includes("Nível VIP") || l.titulo.includes("Classificação")).sort((a,b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-  }, [clienteSelecionado]);
-  
-  const totalRankPages = Math.ceil(rankLogsFiltrados.length / rankTimelinePerPage) || 1;
-  const rankLogsPaginados = rankLogsFiltrados.slice((rankTimelinePage - 1) * rankTimelinePerPage, rankTimelinePage * rankTimelinePerPage);
 
   // ==========================================
   // HELPERS UI E RENDERIZADORES COMPARTILHADOS
@@ -890,9 +651,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
   };
 
   const getRankIndicator = (rankNome) => {
-      // CORREÇÃO: Agora ele busca na lista real que veio do banco de dados!
-      const rank = niveisVIPDaApi.find(n => safeStr(n.nome).toLowerCase() === safeStr(rankNome).toLowerCase());
-      
+      const rank = niveisVIP.find(n => safeStr(n.nome).toLowerCase() === safeStr(rankNome).toLowerCase());
       if (rank && rank.imagem) {
           return (
             <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200 w-max shadow-sm">
@@ -909,17 +668,9 @@ const ultimasComprasListFiltrada = useMemo(() => {
       );
   };
 
-    const renderClienteCell = (c) => (
+  const renderClienteCell = (c) => (
     <div className="flex items-center gap-4">
-      {/* Se tiver avatar, mostra a imagem. Se não tiver, mostra as iniciais. A classe overflow-hidden garante que a imagem fique redonda */}
-      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-500 border border-slate-200 shrink-0 shadow-sm overflow-hidden">
-          {c?.avatar ? (
-              <img src={c.avatar} alt={safeStr(c?.nome)} className="w-full h-full object-cover" />
-          ) : (
-              getAvatarInitials(c?.nome)
-          )}
-      </div>
-      
+      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-500 border border-slate-200 shrink-0 shadow-sm">{getAvatarInitials(c?.nome)}</div>
       <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
               <span className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{safeStr(c?.nome)}</span>
@@ -933,34 +684,101 @@ const ultimasComprasListFiltrada = useMemo(() => {
     </div>
   );
 
+  // ==========================================
+  // FUNÇÕES DE AÇÕES DO PERFIL (Tags, Bloqueio, VIP)
+  // ==========================================
+  const adicionarTag = () => {
+      if (novaTag.trim() && clienteSelecionado) {
+          if (!clienteSelecionado.tags.includes(novaTag.trim())) {
+              setClienteSelecionado(prev => ({ ...prev, tags: [...prev.tags, novaTag.trim()] }));
+          }
+          setNovaTag('');
+      }
+  };
+  const removerTag = (tag) => {
+      if (clienteSelecionado) {
+          setClienteSelecionado(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+      }
+  };
+
+  const handleConfirmarSuspensao = () => {
+      if (!modalSuspensao.motivo.trim()) return alert("O motivo é obrigatório para manter o registro de auditoria.");
+      
+      const novoStatus = modalSuspensao.acao === 'SUSPENDER' ? 'INATIVO' : 'ATIVO';
+      triggerAcao('bloqueio', modalSuspensao.acao === 'SUSPENDER' ? 'Conta suspensa e log registrado.' : 'Conta reativada com sucesso.');
+      
+      setTimeout(() => { 
+          // Adiciona log na timeline mock
+          const newLog = {
+              id: Date.now(),
+              data: new Date().toISOString(),
+              titulo: modalSuspensao.acao === 'SUSPENDER' ? 'Conta Suspensa / Bloqueada' : 'Conta Reativada pelo Admin',
+              desc: `Motivo: ${modalSuspensao.motivo}`,
+              tipo: modalSuspensao.acao === 'SUSPENDER' ? 'warning' : 'success'
+          };
+          setClienteSelecionado(prev => ({ 
+              ...prev, 
+              status: novoStatus,
+              auditLogs: [newLog, ...prev.auditLogs]
+          })); 
+          setModalSuspensao({ isOpen: false, acao: 'SUSPENDER', motivo: '', arquivo: null });
+      }, 1500);
+  };
+
+  // Funções VIP Modal
   const abrirNovoVIP = () => setModalVIP({ isOpen: true, isNovo: true, data: { ...defaultVIP, id: Date.now() } });
   const editarVIP = (nivel) => setModalVIP({ isOpen: true, isNovo: false, data: { ...nivel } });
   const fecharModalVIP = () => setModalVIP({ isOpen: false, isNovo: true, data: defaultVIP });
+
   const handleVIPImageUpload = (e) => {
       const file = e.target.files[0];
-      if(file) setModalVIP(prev => ({ ...prev, imagemFile: file, data: { ...prev.data, imagem: URL.createObjectURL(file) } }));
+      if(file) setModalVIP(prev => ({ ...prev, data: { ...prev.data, imagem: URL.createObjectURL(file) } }));
   };
+
+  const salvarVIP = () => {
+      const data = modalVIP.data;
+      if (!data.nome.trim()) return alert("O nome do nível é obrigatório.");
+      
+      const gasto = parseCommaFloat(data.gastoRequisito);
+      const compras = safeNum(data.comprasRequisito);
+
+      if (!data.isDefault && gasto <= 0 && compras <= 0) {
+          return alert("Regra inválida. Defina pelo menos um requisito maior que zero (Valor em Gastos ou Qtd de Compras).");
+      }
+      const hasDuplicate = niveisVIP.some(n => n.id !== data.id && parseCommaFloat(n.gastoRequisito) === gasto && safeNum(n.comprasRequisito) === compras);
+      if (hasDuplicate) {
+          return alert("Conflito de Regras: Já existe um Nível VIP com exatamente esses mesmos requisitos.");
+      }
+
+      let updatedList = [...niveisVIP];
+      if (data.isDefault) updatedList = updatedList.map(n => ({ ...n, isDefault: false }));
+
+      if (modalVIP.isNovo) updatedList.push(data);
+      else updatedList = updatedList.map(n => n.id === data.id ? data : n);
+
+      updatedList.sort((a,b) => parseCommaFloat(a.gastoRequisito) - parseCommaFloat(b.gastoRequisito));
+      setNiveisVIP(updatedList);
+      fecharModalVIP();
+  };
+
+  const excluirVIP = (id) => {
+      if(window.confirm("Deseja realmente excluir este nível de Benefício?")) {
+          setNiveisVIP(niveisVIP.filter(n => n.id !== id));
+      }
+  };
+
 
   // ============================================================================
   // RENDER MODULAR: DASHBOARD PAINEL
   // ============================================================================
-  const renderPainel = () => {
-    if (carregandoClientes) return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Icons.Spinner className="w-10 h-10 text-blue-600" />
-        <p className="text-slate-500 font-bold animate-pulse">Sincronizando Dashboard com o Servidor HUB...</p>
-      </div>
-    );
-
-    return (
+  const renderPainel = () => (
     <FadeIn key="painel" className="space-y-6">
+      
+      {/* Cabeçalho Isolado */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-50">
          <div>
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-black text-slate-800 tracking-tight">Inteligência de Clientes</h2>
-              <button onClick={() => refetchClients()} className={`ml-4 w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center transition-all ${isFetchingClients ? 'animate-spin text-blue-500 border-blue-300' : ''}`} title="Sincronizar Manualmente">
-                  <Icons.Refresh className="w-4 h-4"/>
-              </button>
               <button onClick={() => setShowMetricsHelp(true)} aria-label="Dicionário de Métricas" className="p-1.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors border border-blue-100 shadow-sm" title="Dicionário de Métricas">
                 <Icons.Info className="w-5 h-5"/>
               </button>
@@ -989,8 +807,9 @@ const ultimasComprasListFiltrada = useMemo(() => {
          </div>
       </div>
 
+      {/* HORIZONTAL KPI CARD GROUP LAYOUT */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-slate-100 overflow-hidden relative z-10">
-<div className="flex-[1.5] p-6 bg-gradient-to-br from-blue-50/50 to-white relative overflow-hidden flex flex-col justify-center">
+          <div className="flex-[1.5] p-6 bg-gradient-to-br from-blue-50/50 to-white relative overflow-hidden flex flex-col justify-center">
               <div className="absolute top-0 right-0 transform translate-x-6 -translate-y-6 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
               <div className="flex items-center justify-between relative z-10 mb-2">
                   <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><Icons.Activity className="w-3.5 h-3.5"/> Receita Bruta Total</span>
@@ -999,93 +818,39 @@ const ultimasComprasListFiltrada = useMemo(() => {
                   </button>
               </div>
               <div className="relative z-10 my-2">
-                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight whitespace-nowrap overflow-x-auto custom-scrollbar pb-1">
-                    {formatSmartCurrency(metricasReais?.receita_bruta || 0, showRevenue)}
-                </h3>
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight whitespace-nowrap overflow-x-auto custom-scrollbar pb-1">
+                      {showRevenue ? formatSmartCurrency(12345000, true) : formatSmartCurrency(12345000, false)}
+                  </h3>
               </div>
               <div className="pt-3 border-t border-blue-100/50 flex items-center justify-between relative z-10 mt-auto">
-                <div>
-                    <p className="text-[11px] text-slate-500 font-medium">Ticket Médio Geral</p>
-                    <p className="text-sm font-bold text-slate-800">
-                        {formatCurrency(metricasReais?.ticket_medio || 0)}
-                    </p>
-                </div>
-                
-                {/* Indicador de Crescimento Dinâmico */}
-                {metricasReais?.crescimento !== undefined && (
-                    <div className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border shadow-sm ${
-                        metricasReais.crescimento >= 0 
-                            ? 'text-emerald-600 bg-emerald-50 border-emerald-100' 
-                            : 'text-rose-600 bg-rose-50 border-rose-100'          
-                    }`}>
-                        {metricasReais.crescimento >= 0 
-                            ? <Icons.TrendingUp className="w-3.5 h-3.5" /> 
-                            : <Icons.TrendingDown className="w-3.5 h-3.5" />
-                        }
-                        {metricasReais.crescimento > 0 ? '+' : ''}{Number(metricasReais.crescimento).toFixed(1)}%
-                    </div>
-                )}
-                
+                  <div>
+                      <p className="text-[11px] text-slate-500 font-medium">Ticket Médio Geral</p>
+                      <p className="text-sm font-bold text-slate-800">R$ 145,00</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 shadow-sm">
+                      <Icons.TrendingUp className="w-3.5 h-3.5" /> +18.4%
+                  </div>
               </div>
           </div>
-        <div className="flex-1 p-6 flex flex-col justify-center hover:bg-slate-50/50 transition-colors">
+          <div className="flex-1 p-6 flex flex-col justify-center hover:bg-slate-50/50 transition-colors">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Clientes Totais</span>
-              <span className="text-3xl font-black text-slate-800">{Number(listaClientesDaApi.length).toLocaleString('pt-BR')}</span>
-              {/* 🟢 AGORA É DINÂMICO 🟢 */}
-              <p className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1">
-                  <span className="text-emerald-600 font-bold">+{metricasReais?.novos_clientes_pct?.toFixed(1) || 0}%</span> este mês
-              </p>
+              <span className="text-3xl font-black text-slate-800">{Number(8249).toLocaleString('pt-BR')}</span>
+              <p className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1"><span className="text-emerald-600 font-bold">+12%</span> este mês</p>
           </div>
           <div className="flex-1 p-6 flex flex-col justify-center hover:bg-slate-50/50 transition-colors">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pedidos Totais</span>
-              <span className="text-3xl font-black text-slate-800">{Number(comprasTotaisCRM).toLocaleString('pt-BR')}</span>
+              <span className="text-3xl font-black text-slate-800">{Number(24500).toLocaleString('pt-BR')}</span>
               <p className="text-[10px] text-slate-500 mt-1 font-medium">Histórico global</p>
           </div>
           <div className="flex-1 p-6 flex flex-col justify-center hover:bg-slate-50/50 transition-colors">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">LTV Médio</span>
-              <span className="text-3xl font-black text-emerald-600">{formatSmartCurrency(ltvMedioCRM)}</span>
-              {/* 🟢 AGORA É DINÂMICO E MUDA DE COR SE FOR NEGATIVO 🟢 */}
-              <p className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1">
-                  {metricasReais?.diferenca_ltv >= 0 ? (
-                      <span className="text-emerald-600 font-bold">+{formatCurrency(metricasReais?.diferenca_ltv || 0)}</span>
-                  ) : (
-                      <span className="text-rose-600 font-bold">{formatCurrency(metricasReais?.diferenca_ltv || 0)}</span>
-                  )}
-                  vs mês ant.
-              </p>
+              <span className="text-3xl font-black text-emerald-600">{formatSmartCurrency(842.50)}</span>
+              <p className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1"><span className="text-emerald-600 font-bold">+R$ 24,00</span> vs mês ant.</p>
           </div>
       </div>
 
-      <AnimatePresence>
-          {showMetricsHelp && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMetricsHelp(false)} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-                  <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-xl relative z-10 border border-slate-200">
-                      <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-                         <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Icons.Info className="w-6 h-6 text-blue-500"/> Dicionário de Métricas do CRM</h3>
-                         <button onClick={() => setShowMetricsHelp(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition-colors"><Icons.Close className="w-5 h-5"/></button>
-                      </div>
-                      <div className="space-y-4 text-sm font-medium text-slate-600 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
-                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <p className="font-bold text-slate-800">Receita Bruta Total</p>
-                             <p className="text-xs text-slate-500 mt-1">Soma do valor bruto de todas as vendas aprovadas na loja dentro do período selecionado.</p>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <p className="font-bold text-slate-800">LTV Médio (Lifetime Value)</p>
-                             <p className="text-xs text-slate-500 mt-1">Valor médio total acumulado que cada cliente já gastou em sua loja desde a primeira compra.</p>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                             <p className="font-bold text-slate-800">Clientes Totais vs. Pedidos Totais</p>
-                             <p className="text-xs text-slate-500 mt-1">A proporção entre a base total de usuários cadastrados e o volume de compras convertido no e-commerce.</p>
-                          </div>
-                      </div>
-                      <button onClick={() => setShowMetricsHelp(false)} className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-sm">Entendido</button>
-                  </motion.div>
-              </div>
-          )}
-      </AnimatePresence>
-    {/* Card Ranking LTV Painel DashBoard
-      <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col relative z-20">
+      {/* Ranking Top LTV */}
+      <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden relative z-0">
         <header className="p-6 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/50">
           <div>
             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-3">
@@ -1115,7 +880,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
             </div>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-sm flex-1 sm:flex-auto">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">LTV Até R$:</span>
-              <input type="number" placeholder={`Máx: ${maxLTVGeral}`} min="1" value={maxLTVFiltro} onChange={(e) => setMaxLTVFiltro(e.target.value)} className="w-24 text-xs font-bold text-slate-900 bg-transparent outline-none focus:border-blue-500" title="Digita o valor máximo de LTV para filtrar" />
+              <input type="number" placeholder={`Máx: ${MAX_LTV_GERAL}`} min="1" value={maxLTVFiltro} onChange={(e) => setMaxLTVFiltro(e.target.value)} className="w-24 text-xs font-bold text-slate-900 bg-transparent outline-none focus:border-blue-500" title="Digita o valor máximo de LTV para filtrar" />
             </div>
             <select aria-label="Quantidade de Clientes do Ranking" value={topClientsCount} onChange={(e) => setTopClientsCount(Number(e.target.value))} className="bg-slate-50 border border-slate-200 text-slate-700 font-bold rounded-xl px-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer shadow-sm transition-all">
               <option value={5}>Exibir 5</option><option value={10}>Exibir 10</option>
@@ -1153,16 +918,16 @@ const ultimasComprasListFiltrada = useMemo(() => {
           </table>
         </div>
       </section>
-    */}
-      <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col relative z-20">
-{/* 🟢 CORREÇÃO: Header com z-[90] para ficar acima da tabela */}
-        <header className="p-6 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/50 relative z-[90]">
+
+      {/* Tabela de Últimas Compras */}
+      <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col overflow-hidden relative z-0">
+        <header className="p-6 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/50">
           <div>
             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-3"><span className="text-blue-500"><Icons.Package className="w-5 h-5"/></span> Registros de Compra</h3>
             <p className="text-xs text-slate-500 mt-1">Visão em tempo real das conversões mais recentes.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-            <div className="relative z-[100]">
+            <div className="relative z-50">
               <HoverProgressRoundButton 
                   text={recentDateRange.start ? `${formatDateBR(recentDateRange.start)} até ${formatDateBR(recentDateRange.end)}` : 'Todo o Período'}
                   onClick={() => setRecentDateOpen(!recentDateOpen)} 
@@ -1183,13 +948,12 @@ const ultimasComprasListFiltrada = useMemo(() => {
             </div>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-sm flex-1 sm:flex-auto">
               <label htmlFor="compra_ultimas" className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Valor Até R$:</label>
-              <input id="compra_ultimas" type="number" placeholder={`Máx: ${maxCompraGeral}`} min="1" value={ultimasMaxCompra} onChange={(e) => setUltimasMaxCompra(e.target.value)} className="w-24 text-xs font-bold text-slate-900 bg-transparent outline-none focus:border-blue-500" />
+              <input id="compra_ultimas" type="number" placeholder={`Máx: ${MAX_COMPRA_GERAL}`} min="1" value={ultimasMaxCompra} onChange={(e) => setUltimasMaxCompra(e.target.value)} className="w-24 text-xs font-bold text-slate-900 bg-transparent outline-none focus:border-blue-500" />
             </div>
           </div>
         </header>
         
-        {/* 🟢 CORREÇÃO: Tabela com z-0 para ficar por baixo do menu suspenso */}
-        <div className="overflow-x-auto w-full custom-scrollbar relative z-0">
+        <div className="overflow-x-auto w-full custom-scrollbar">
           <table className="w-full text-left text-sm text-slate-600 whitespace-nowrap min-w-[1200px]">
             <thead className="bg-slate-50/50 text-slate-500 uppercase font-bold text-[10px] tracking-widest border-b border-slate-200">
               <tr>
@@ -1244,30 +1008,18 @@ const ultimasComprasListFiltrada = useMemo(() => {
         )}
       </section>
     </FadeIn>
-    );
-  };
+  );
 
   // ============================================================================
   // RENDER MODULAR: LISTA CRM (DIRETÓRIO)
   // ============================================================================
-  const renderClientesCRMLista = () => {
-    if (carregandoClientes) return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Icons.Spinner className="w-10 h-10 text-blue-600" />
-        <p className="text-slate-500 font-bold animate-pulse">Buscando Clientes no Servidor HUB...</p>
-      </div>
-    );
-
-    return (
+  const renderClientesCRMLista = () => (
     <FadeIn key="diretorio" className="space-y-6">
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col min-h-[600px] relative z-0">
         <header className="p-6 border-b border-slate-200 bg-slate-50/50 rounded-t-3xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div>
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3"><span className="text-blue-500"><Icons.UsersIcon className="w-5 h-5"/></span> Diretório de Clientes</h3>
             <p className="text-xs text-slate-500 mt-1">Gerencie cadastros, LTV e carteiras virtuais detalhadamente.</p>
-            <button onClick={() => refetchClients()} className={`ml-4 w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center transition-all ${isFetchingClients ? 'animate-spin text-blue-500 border-blue-300' : ''}`} title="Sincronizar Manualmente">
-                  <Icons.Refresh className="w-4 h-4"/>
-            </button>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
             <div className="relative w-full sm:w-80 group">
@@ -1345,8 +1097,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
         )}
       </div>
     </FadeIn>
-    );
-  };
+  );
 
   // ============================================================================
   // RENDER MODULAR: PERFIL CRM (CUSTOMER 360 VIEW)
@@ -1386,16 +1137,16 @@ const ultimasComprasListFiltrada = useMemo(() => {
             </div>
           </div>
           <div className="flex items-center gap-3 pb-1 w-full lg:w-auto">
-             <button 
-                 onClick={() => {
-                     setCrmSubTab('RESUMO');
-                     setPerfilEmEdicao(!perfilEmEdicao); 
-                 }} 
-                 className={`flex-1 lg:flex-none px-4 py-2.5 bg-white border ${perfilEmEdicao ? 'border-blue-300 text-blue-600 bg-blue-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-600'} rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2`}
-             >
-                 {perfilEmEdicao ? <Icons.Close className="w-4 h-4" /> : <Icons.Edit3 className="w-4 h-4" />} 
-                 {perfilEmEdicao ? 'Cancelar Edição' : 'Editar Perfil'}
-             </button>
+            <button 
+                onClick={() => {
+                    setCrmSubTab('RESUMO'); // Direciona para a aba certa
+                    setPerfilEmEdicao(!perfilEmEdicao); // Alterna o modo de edição
+                }} 
+                className={`flex-1 lg:flex-none px-4 py-2.5 bg-white border ${perfilEmEdicao ? 'border-blue-300 text-blue-600 bg-blue-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-600'} rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2`}
+            >
+                {perfilEmEdicao ? <Icons.Close className="w-4 h-4" /> : <Icons.Edit3 className="w-4 h-4" />} 
+                {perfilEmEdicao ? 'Cancelar Edição' : 'Editar Perfil'}
+            </button>
              {clienteSelecionado?.status === 'INATIVO' ? (
                  <ProgressButton 
                     onClick={() => setModalSuspensao({ isOpen: true, acao: 'REATIVAR', motivo: '', arquivo: null })} 
@@ -1415,7 +1166,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
         </header>
 
         <nav className="flex px-8 border-t border-slate-100 bg-slate-50/50 shrink-0 overflow-x-auto custom-scrollbar relative" aria-label="Abas do Perfil">
-          {['RESUMO', 'CARTEIRAS (LIVRO RAZÃO)', 'ENDEREÇOS','HISTÓRICO DE PEDIDOS','TIMELINE (AUDIT)'].map((tab) => (
+          {['RESUMO', 'CARTEIRAS (LIVRO RAZÃO)', 'ENDEREÇOS', 'TIMELINE (AUDIT)'].map((tab) => (
             <button type="button" key={tab} aria-label={`Aba ${tab}`} aria-current={crmSubTab === tab ? "page" : undefined} onClick={() => setCrmSubTab(tab)} className={`relative px-6 py-5 text-xs font-bold tracking-wider whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 ${crmSubTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}>
               {tab}
               {crmSubTab === tab && <motion.div layoutId="crmActiveTab" className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-500 rounded-t-full" />}
@@ -1423,66 +1174,42 @@ const ultimasComprasListFiltrada = useMemo(() => {
           ))}
         </nav>
       </div>
-
       <AnimatePresence mode="wait">
+
         {crmSubTab === 'RESUMO' && !perfilEmEdicao && (
           <motion.section key="RESUMO_READ" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col lg:flex-row gap-6">
             
+            {/* SIDEBAR DO PERFIL */}
             <div className="w-full lg:w-1/3 flex flex-col gap-6">
-                {/* 🟢 CARD SOBRE O CLIENTE PADRÃO PEDIDOS */}
-                <article className="bg-white border border-slate-200 rounded-[24px] p-6 shadow-sm">
-                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-6 pb-4 border-b border-slate-100"><Icons.Eye className="w-5 h-5"/> Sobre o Cliente</h3>
-                    
-                    <div className="flex items-center gap-4 mb-6 relative">
-                        <div className="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-lg text-slate-600 shadow-sm overflow-hidden">
-                            {clienteSelecionado?.avatar ? <img src={clienteSelecionado.avatar} className="w-full h-full object-cover" alt="" /> : getAvatarInitials(clienteSelecionado?.nome)}
-                        </div>
-                        <div>
-                            <p className="font-black text-slate-900 text-base leading-tight">{safeStr(clienteSelecionado?.nome)}</p>
-                            <div className="flex items-center gap-1 mt-1">
-                                <span className="text-[9px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded shadow-sm">{safeStr(clienteSelecionado?.origem)}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 text-xs font-medium text-slate-600 mb-6 border-b border-slate-100 pb-6 relative">
-                        {/* 🟢 STATUS VIP POSICIONADO NO CANTO */}
-                        <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-100 to-yellow-50 border border-yellow-200 text-yellow-700 font-black text-[10px] uppercase px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-                            <Icons.Crown className="w-4 h-4" /> VIP {clienteSelecionado?.rank || 'Iniciante'}
-                        </div>
+                <article className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <h4 className="text-sm font-bold text-slate-800 mb-5 flex items-center gap-2"><Icons.UserCircle className="w-5 h-5 text-slate-400" /> Sobre o Cliente</h4>
+                    <div className="space-y-4">
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Telefone / WhatsApp:</p><p className="text-sm font-bold text-slate-800 mt-1">{safeStr(clienteSelecionado?.telefone)}</p></div>
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CPF:</p><p className="text-sm font-bold text-slate-800 mt-1">{safeStr(clienteSelecionado?.cpf)}</p></div>
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Data de Nascimento:</p><p className="text-sm font-bold text-slate-800 mt-1">{formatDateBR(clienteSelecionado?.nascimento)}</p></div>
+                        {/* NOVO CAMPO DE SEXO AQUI */}
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sexo:</p><p className="text-sm font-bold text-slate-800 mt-1">{safeStr(clienteSelecionado?.sexo) || 'Não informado'}</p></div>
                         
-                        <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">WhatsApp / Telefone</span><span className="font-bold text-slate-800">{safeStr(clienteSelecionado?.telefone)}</span></div>
-                        <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">E-mail de Contato</span><span>{safeStr(clienteSelecionado?.email)}</span></div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CPF</span><span className="font-mono">{safeStr(clienteSelecionado?.cpf)}</span></div>
-                            <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Gênero</span><span>{safeStr(clienteSelecionado?.sexo) || 'Não informado'}</span></div>
-                            <div className="flex flex-col gap-1"><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nascimento</span><span>{formatDateBR(clienteSelecionado?.nascimento)}</span></div>
-                        </div>
+                        <div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Origem:</p><p className="text-sm font-bold text-slate-800 mt-1">{safeStr(clienteSelecionado?.origem)}</p></div>
                     </div>
-
-                    {/* ETIQUETAS MANUAIS */}
-                    <div className="mb-6">
+                    
+                    <div className="mt-6 pt-5 border-t border-slate-100">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Etiquetas (Tags Manuais)</label>
-                        <div className="flex flex-wrap gap-1 mb-3">
-                            {clienteSelecionado?.tags?.map((tag, i) => (
-                                <span key={i} className="flex items-center gap-1 bg-slate-50 border border-slate-200 text-slate-600 text-[9px] font-bold px-2 py-1 rounded-md shadow-sm"><Icons.Tag className="w-3 h-3"/> {tag} <button onClick={()=>removerTag(tag)} className="ml-1 text-slate-400 hover:text-rose-500"><Icons.Close className="w-3 h-3"/></button></span>
-                            ))}
-                        </div>
                         <div className="flex gap-2">
-                            <input type="text" placeholder="Nova tag..." value={novaTag} onChange={(e)=>setNovaTag(e.target.value)} onKeyPress={(e)=> e.key === 'Enter' && adicionarTag()} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800" />
-                            <button onClick={adicionarTag} className="bg-blue-50 text-blue-600 border border-blue-200 rounded-xl px-3 text-xs font-bold hover:bg-blue-100 shadow-sm">Add</button>
+                           <input type="text" placeholder="Nova tag..." value={novaTag} onChange={(e)=>setNovaTag(e.target.value)} onKeyPress={(e)=> e.key === 'Enter' && adicionarTag()} aria-label="Adicionar Tag" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800" />
+                           <button onClick={adicionarTag} aria-label="Adicionar" className="bg-blue-50 text-blue-600 border border-blue-200 rounded-xl px-3 text-xs font-bold hover:bg-blue-100 transition-colors shadow-sm">Add</button>
                         </div>
                     </div>
 
-                    <a href={`https://wa.me/${safeStr(clienteSelecionado?.telefone).replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-full bg-[#25D366] text-white text-xs font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 shadow-sm hover:bg-[#1ebe57] transition-all">
-                        <Icons.WhatsApp className="w-5 h-5"/> Falar no WhatsApp
-                    </a>
+                    <div className="mt-6 pt-5 border-t border-slate-100">
+                        <a href={`https://wa.me/${safeStr(clienteSelecionado?.telefone).replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label="Falar no WhatsApp" className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-[#25D366] hover:bg-[#1ebd5a] text-white text-sm font-bold rounded-xl shadow-sm transition-colors"><Icons.WhatsApp className="w-5 h-5"/> Falar no WhatsApp</a>
+                    </div>
                 </article>
 
                 <article className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex-1 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Icons.FileText className="w-5 h-5 text-slate-400" /> Anotações Internas</h4>
-                        <ProgressButton onClick={salvarNotasAPI} loading={savingState === 'notas'} text="Salvar" loadingText="..." className="text-blue-600 hover:text-white font-bold bg-blue-50 hover:bg-blue-600 border border-blue-200 hover:border-transparent px-3 py-1.5 rounded-lg transition-colors text-xs shadow-sm" />
+                        <ProgressButton onClick={() => triggerAcao('notas', 'Anotações salvas com sucesso!')} loading={savingState === 'notas'} text="Salvar" loadingText="..." className="text-blue-600 hover:text-white font-bold bg-blue-50 hover:bg-blue-600 border border-blue-200 hover:border-transparent px-3 py-1.5 rounded-lg transition-colors text-xs shadow-sm" />
                     </div>
                     <textarea 
                         className="w-full flex-1 min-h-[120px] bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none shadow-inner" 
@@ -1494,7 +1221,10 @@ const ultimasComprasListFiltrada = useMemo(() => {
                 </article>
             </div>
 
+            {/* ÁREA PRINCIPAL DO PERFIL */}
             <div className="w-full lg:w-2/3 flex flex-col gap-6">
+                
+                {/* Mini Dashboard Resumo */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                    <article className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-center relative overflow-hidden">
                       <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-full blur-2xl pointer-events-none"></div>
@@ -1558,10 +1288,68 @@ const ultimasComprasListFiltrada = useMemo(() => {
                   </article>
                 </div>
             </div>
+
+            {/* OVERLAY: MODAL DE SUSPENSÃO / REATIVAÇÃO MANTIDO NESTA TELA */}
+            <AnimatePresence>
+                {modalSuspensao.isOpen && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-suspend-title">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setModalSuspensao({...modalSuspensao, isOpen: false})} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+                        
+                        <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-lg relative z-10 border border-slate-200">
+                            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-100">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${modalSuspensao.acao === 'SUSPENDER' ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                                    {modalSuspensao.acao === 'SUSPENDER' ? <Icons.AlertTriangle className="w-6 h-6" /> : <Icons.Check className="w-6 h-6" />}
+                                </div>
+                                <div>
+                                    <h3 id="modal-suspend-title" className="text-xl font-black text-slate-800">
+                                        {modalSuspensao.acao === 'SUSPENDER' ? 'Suspender Conta do Cliente' : 'Reativar Conta do Cliente'}
+                                    </h3>
+                                    <p className="text-[11px] text-slate-500 font-medium mt-1">Esta ação exige um motivo formal e ficará salva no Audit Log.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-700 block mb-2">Motivo Obrigatório *</label>
+                                    <textarea 
+                                        value={modalSuspensao.motivo} 
+                                        onChange={(e) => setModalSuspensao({...modalSuspensao, motivo: e.target.value})}
+                                        className="w-full h-24 bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none shadow-inner"
+                                        placeholder={`Especifique detalhadamente por que a conta está sendo ${modalSuspensao.acao === 'SUSPENDER' ? 'suspensa/bloqueada' : 'reativada'}...`}
+                                    />
+                                </div>
+
+                                {modalSuspensao.acao === 'SUSPENDER' && (
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-700 block mb-2">Anexar Prova / Print (Opcional, máx 3MB)</label>
+                                        <label className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 rounded-xl p-6 cursor-pointer transition-colors shadow-sm">
+                                            <Icons.Upload className="w-6 h-6 text-slate-400" />
+                                            <span className="text-sm font-bold text-slate-600">Clique para selecionar imagem</span>
+                                            <span className="text-[10px] text-slate-400">Suporta JPG, PNG. O arquivo será higienizado e comprimido.</span>
+                                            <input type="file" accept="image/*" className="hidden" />
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-4 mt-8 pt-6 border-t border-slate-100">
+                                <button onClick={() => setModalSuspensao({...modalSuspensao, isOpen: false})} className="flex-1 bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3.5 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancelar</button>
+                                <ProgressButton 
+                                    onClick={handleConfirmarSuspensao} 
+                                    loading={savingState === 'bloqueio'} 
+                                    text={modalSuspensao.acao === 'SUSPENDER' ? 'Confirmar Suspensão' : 'Confirmar Reativação'} 
+                                    loadingText="Registrando..." 
+                                    className={`flex-1 text-white font-bold py-3.5 rounded-xl shadow-sm transition-colors ${modalSuspensao.acao === 'SUSPENDER' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'}`} 
+                                />
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
           </motion.section>
         )}
 
-        {crmSubTab === 'RESUMO' && perfilEmEdicao && (
+{crmSubTab === 'RESUMO' && perfilEmEdicao && (
           <motion.section key="EDITAR_PERFIL" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10 w-full max-w-4xl mx-auto flex flex-col">
               <div className="flex justify-between items-center mb-8 pb-4 border-b border-slate-100">
                   <div>
@@ -1571,7 +1359,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
               </div>
 
               <div className="space-y-8">
-                  {/* Info Leitura */}
+                {/* Info Leitura */}
                   <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 relative">
                       <div className="absolute top-4 right-5 hidden sm:block">
                           <span className="text-[9px] bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold uppercase">Bloqueado no CRM</span>
@@ -1666,10 +1454,9 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                       <div className="bg-amber-50 border border-amber-200 text-amber-800 font-mono font-bold py-3 px-4 rounded-xl text-center text-sm flex items-center justify-between shadow-sm flex-1">
                                           <span>{senhaTemp.codigo}</span> 
                                           <div className="flex flex-col items-end">
-                                            <span className="text-[9px] uppercase bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold">Força Alteração</span>
-                                            <span className={`text-[10px] font-bold mt-0.5 ${tempoRestanteSenha === 'Expirada' ? 'text-rose-600' : 'text-amber-700'}`}>
-                                                {tempoRestanteSenha === 'Expirada' ? 'Expirada' : `Restam ${tempoRestanteSenha}`}
-                                            </span>
+                                           <span className={`text-[10px] font-bold mt-0.5 ${tempoRestanteSenha === 'Expirada' ? 'text-rose-600' : 'text-amber-700'}`}>
+                                              {tempoRestanteSenha === 'Expirada' ? 'Expirada' : `Restam ${tempoRestanteSenha}`}
+                                          </span>
                                           </div>
                                       </div>
                                       {/* Botão de Regerar ao Lado */}
@@ -1682,7 +1469,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                       </button>
                                   </div>
                               ) : (
-                                  <ProgressButton onClick={gerarSenhaProvisoria} loading={savingState === 'gerarSenha'} text="Gerar Senha Provisória (7min)" loadingText="..." icon={Icons.AlertTriangle} className="w-full bg-white border border-amber-200 text-amber-600 hover:bg-amber-50 font-bold py-3 px-4 rounded-xl text-xs shadow-sm transition-colors" />
+                                  <ProgressButton onClick={gerarSenhaProvisoria} loading={savingState === 'gerarSenha'} text="Gerar Senha Provisória (10min)" loadingText="..." icon={Icons.AlertTriangle} className="w-full bg-white border border-amber-200 text-amber-600 hover:bg-amber-50 font-bold py-3 px-4 rounded-xl text-xs shadow-sm transition-colors" />
                               )}
                           </div>
                       </div>
@@ -1722,6 +1509,13 @@ const ultimasComprasListFiltrada = useMemo(() => {
 
               <div className="flex justify-end gap-4 mt-10 pt-6 border-t border-slate-100 flex-shrink-0">
                   <button onClick={() => setPerfilEmEdicao(false)} className="px-8 bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3.5 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancelar</button>
+                  <ProgressButton onClick={() => { 
+                      triggerAcao('savePerfil', 'Perfil atualizado e Log de Auditoria registrado!'); 
+                      setTimeout(() => {
+                          setSenhaProvisoria(null); // Reseta a senha provisória ao fechar
+                          setPerfilEmEdicao(false);
+                      }, 1500); 
+                  }} loading={savingState === 'savePerfil'} text="Salvar Alterações Seguras" loadingText="Gravando Audit Log..." className="px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-sm transition-colors" />
               </div>
           </motion.section>
         )}
@@ -1741,27 +1535,24 @@ const ultimasComprasListFiltrada = useMemo(() => {
              </div>
              <article className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
                 <h4 className="text-lg font-bold text-slate-800 mb-2">Livro Razão: Adicionar Transação Manual</h4>
-                <p className="text-sm font-medium text-slate-500 mb-6">Adicione saldo como pedido de desculpas ou bônus. O sistema gravará um registro imutável (Audit Log) para garantir a segurança financeira.</p>             
+                <p className="text-sm font-medium text-slate-500 mb-6">Adicione saldo como pedido de desculpas ou bônus. O sistema gravará um registro imutável (Audit Log) para garantir a segurança financeira.</p>
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="w-full sm:w-1/3">
                       <label className="text-xs font-bold text-slate-700 block mb-2">Tipo de Saldo</label>
-                      <select value={walletFlow.tipo} onChange={e => setWalletFlow({...walletFlow, tipo: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm">
-                          <option value="Hub Coins">Hub Coins</option>
-                          <option value="Cashback (R$)">Cashback (R$)</option>
-                      </select>
+                      <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"><option>Hub Coins</option><option>Cashback (R$)</option></select>
                     </div>
                     <div className="w-full sm:w-2/3">
                       <label className="text-xs font-bold text-slate-700 block mb-2">Valor</label>
-                      <input type="number" value={walletFlow.valor} onChange={e => setWalletFlow({...walletFlow, valor: e.target.value})} placeholder="Ex: 50" min="1" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" />
+                      <input type="number" placeholder="Ex: 50" min="1" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-700 block mb-2">Motivo da Transação (Obrigatório para Auditoria)</label>
-                    <input type="text" value={walletFlow.motivo} onChange={e => setWalletFlow({...walletFlow, motivo: e.target.value})} placeholder="Ex: Bônus de aniversário (Manual)" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" />
+                    <input type="text" placeholder="Ex: Bônus de aniversário (Manual)" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" />
                   </div>
                   <ProgressButton 
-                    onClick={processarTransacaoWallet}
+                    onClick={() => triggerAcao('transacao', 'Transação registrada no Livro Razão e Audit Log.')}
                     loading={savingState === 'transacao'} text="Processar Transação Segura" loadingText="Registrando..." className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors disabled:opacity-70" 
                   />
                 </div>
@@ -1779,6 +1570,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {clienteSelecionado.enderecos.map((end, idx) => (
                         <article key={idx} className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group hover:border-blue-300 transition-colors">
+                            {/* Decorative Top Bar for Netflix Style */}
                             <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500 absolute top-0 left-0"></div>
                             
                             <div className="p-8 pb-6 relative">
@@ -1817,70 +1609,11 @@ const ultimasComprasListFiltrada = useMemo(() => {
              )}
           </motion.section>
         )}
-        {crmSubTab === 'HISTÓRICO DE PEDIDOS' && (
-          <motion.section key="HISTORICO" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto w-full flex flex-col space-y-6">
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex-1 flex flex-col min-h-[600px]">
-                  <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-100">
-                      <div>
-                          <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Package className="w-6 h-6 text-blue-500"/> Histórico de Pedidos do Cliente</h3>
-                          <p className="text-xs text-slate-500 mt-1 font-medium">Visão cronológica de todas as conversões, itens e valores.</p>
-                      </div>
-                  </header>
-                  
-                  <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                      {orderHistoryPaginados.length > 0 ? orderHistoryPaginados.map(pedido => (
-                          <div key={pedido.id} className="border border-slate-200 rounded-2xl p-6 bg-slate-50/50 hover:bg-white transition-all shadow-sm group">
-                              <div className="flex justify-between items-start mb-4">
-                                  <div>
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDateBR(pedido.data_raw)}</span>
-                                      <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">Pedido #{pedido.id}</h4>
-                                  </div>
-                                  <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border ${pedido.status === 'CANCELADO' ? 'bg-rose-50 text-rose-700 border-rose-200' : pedido.status === 'REEMBOLSADO' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{pedido.status}</span>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
-                                  <div className="sm:col-span-2">
-                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Itens Comprados</p>
-                                      <div className="space-y-3">
-                                          {pedido.itens?.map((item, i) => (
-                                              <div key={i} className="flex gap-3 items-center">
-                                                  <img src={item.img} className="w-10 h-10 rounded-lg object-cover border border-slate-200" alt=""/>
-                                                  <div className="flex flex-col">
-                                                      <span className="text-xs font-bold text-slate-800">{item.nome}</span>
-                                                      <span className="text-[9px] text-slate-500 uppercase">{item.qtd}x | {item.variacao}</span>
-                                                  </div>
-                                              </div>
-                                          ))}
-                                      </div>
-                                  </div>
-                                  <div className="space-y-2 text-xs font-medium text-slate-600 border-l border-slate-100 pl-6">
-                                      <div className="flex justify-between"><span>Subtotal:</span><strong>{formatCurrency(pedido.subtotal)}</strong></div>
-                                      <div className="flex justify-between"><span>Frete:</span><strong>{formatCurrency(pedido.frete)}</strong></div>
-                                      <div className="flex justify-between text-emerald-600"><span>Descontos:</span><strong>-{formatCurrency(pedido.desconto)}</strong></div>
-                                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100"><span className="font-black text-slate-900 uppercase">Total Pago:</span><strong className="text-base text-slate-900">{formatCurrency(pedido.total)}</strong></div>
-                                  </div>
-                              </div>
-                          </div>
-                      )) : (
-                          <div className="py-12 text-center text-slate-500 font-medium">Este cliente ainda não possui histórico de pedidos no sistema.</div>
-                      )}
-                  </div>
 
-                  {historicoPedidosFiltrado.length > orderHistoryPerPage && (
-                      <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 shrink-0">
-                          <span>Pág. {orderHistoryPage} de {totalOrderHistoryPages}</span>
-                          <div className="flex gap-2">
-                              <button type="button" onClick={() => setOrderHistoryPage(p => Math.max(1, p - 1))} disabled={orderHistoryPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 disabled:opacity-50 transition-colors shadow-sm">&lt;</button>
-                              <button type="button" onClick={() => setOrderHistoryPage(p => Math.min(totalOrderHistoryPages, p + 1))} disabled={orderHistoryPage === totalOrderHistoryPages} className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 disabled:opacity-50 transition-colors shadow-sm">&gt;</button>
-                          </div>
-                      </div>
-                  )}
-              </div>
-          </motion.section>
-        )}
         {crmSubTab === 'TIMELINE (AUDIT)' && (
-          <motion.section key="TIMELINE" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-sm w-full flex flex-col h-[650px] overflow-hidden">
+          <motion.section key="TIMELINE" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-sm w-full flex flex-col overflow-hidden">
              
-             <header className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+             <header className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  <div>
                      <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Activity className="w-6 h-6 text-blue-500"/> Registro de Auditoria (Logs)</h3>
                      <p className="text-xs text-slate-500 mt-1 font-medium">Histórico imutável de ações, transações e segurança desta conta.</p>
@@ -1888,36 +1621,28 @@ const ultimasComprasListFiltrada = useMemo(() => {
                  <div className="flex items-center gap-3 w-full sm:w-auto relative">
                      <div className="relative shrink-0 z-[50]">
                          <HoverProgressRoundButton 
-                             text={(timelineDateRange.start || timelineDateRange.end) ? 'Filtrado' : 'Filtrar Período'}
+                             text={timelineDateRange.start ? `${formatDateBR(timelineDateRange.start)} até ${formatDateBR(timelineDateRange.end)}` : 'Filtrar Data'}
                              onClick={() => setTimelineDateOpen(!timelineDateOpen)} 
                              icon={Icons.Calendar} 
                              ariaLabel="Filtrar Período Audit"
-                             loading={loadingTimeline}
+                             loading={savingState === 'filtroAudit'}
                          />
-                         <AnimatePresence>
-                              {timelineDateOpen && (
-                                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 top-14 bg-white border border-slate-200 shadow-xl rounded-2xl p-5 z-50 w-64">
-                                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Início</label>
-                                      <input type="date" value={timelineDateRange.start} onChange={e => setTimelineDateRange({...timelineDateRange, start: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
-                                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Fim</label>
-                                      <input type="date" value={timelineDateRange.end} onChange={e => setTimelineDateRange({...timelineDateRange, end: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-5 focus:ring-2 focus:ring-blue-500/20" />
-                                      <div className="flex gap-2">
-                                          <button onClick={() => {setTimelineDateRange({start:'', end:''}); setTimelineDateOpen(false); setTimelinePage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg py-2.5 transition-colors">Limpar</button>
-                                          <button onClick={aplicarFiltroTimeline} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-lg py-2.5 transition-colors shadow-sm">Aplicar</button>
-                                      </div>
-                                  </motion.div>
-                              )}
-                          </AnimatePresence>
+                         <DateFilterPopup 
+                             isOpen={timelineDateOpen} onClose={() => setTimelineDateOpen(false)} dateRange={timelineDateRange} setDateRange={setTimelineDateRange} loading={savingState === 'filtroAudit'}
+                             onClear={() => { setTimelineDateRange({start:'',end:''}); setTimelineDateOpen(false); setTimelinePage(1); }}
+                             onApply={() => { triggerAcao('filtroAudit', 'Timeline filtrada!'); setTimelineDateOpen(false); setTimelinePage(1); }}
+                         />
                      </div>
                      <ProgressButton 
                         onClick={() => triggerAcao('exportPdf', 'Download do Relatório Iniciado.')} 
-                        loading={savingState === 'exportPdf'} text="Exportar PDF" icon={Icons.Download} 
-                        className="px-4 py-3 bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2" 
+                        loading={savingState === 'exportPdf'}
+                        text="Exportar PDF" icon={Icons.Download} 
+                        className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2" 
                      />
                  </div>
              </header>
 
-             <div className="p-8 sm:p-12 relative flex-1 overflow-y-auto custom-scrollbar">
+             <div className="p-8 sm:p-12 relative flex-1">
                  <div className="absolute left-[59px] top-12 bottom-12 w-[2px] bg-slate-100 hidden sm:block"></div>
                  <div className="space-y-8 relative z-10">
                     {auditLogsPaginados.length > 0 ? auditLogsPaginados.map((log) => (
@@ -1943,7 +1668,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
              </div>
 
              {auditLogsFiltrados.length > 0 && (
-                <footer className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4 mt-auto shrink-0">
+                <footer className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4 mt-auto">
                     <span>Mostrando {(timelinePage - 1) * timelinePerPage + 1} até {Math.min(timelinePage * timelinePerPage, auditLogsFiltrados.length)} de {auditLogsFiltrados.length} logs</span>
                     <div className="flex items-center gap-4">
                         <span>Página {timelinePage} de {totalTimelinePages}</span>
@@ -1954,6 +1679,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
                     </div>
                 </footer>
              )}
+
           </motion.section>
         )}
       </AnimatePresence>
@@ -1990,8 +1716,9 @@ const ultimasComprasListFiltrada = useMemo(() => {
         </div>
       </header>
 
+      {/* Grid de Cards Estilo Netflix / SaaS Moderno */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {niveisVIPConvertidos.map((nivel) => (
+          {niveisVIP.map((nivel) => (
               <article key={nivel.id} className={`bg-white border ${nivel.isDefault ? 'border-yellow-400 ring-4 ring-yellow-50' : 'border-slate-200'} rounded-3xl shadow-sm overflow-hidden flex flex-col relative group hover:shadow-lg transition-all hover:-translate-y-1`}>
                   
                   {nivel.isDefault && <span className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-bl-xl z-20 shadow-sm">👑 Principal</span>}
@@ -2001,7 +1728,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
                       
                       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => editarVIP(nivel)} aria-label="Editar VIP" className="p-2 bg-white/90 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl shadow-md transition-colors"><Icons.Edit3 className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => excluirVIPReal(nivel.id)} aria-label="Excluir VIP" className="p-2 bg-white/90 text-rose-500 hover:bg-rose-600 hover:text-white rounded-xl shadow-md transition-colors"><Icons.Trash className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => excluirVIP(nivel.id)} aria-label="Excluir VIP" className="p-2 bg-white/90 text-rose-500 hover:bg-rose-600 hover:text-white rounded-xl shadow-md transition-colors"><Icons.Trash className="w-3.5 h-3.5" /></button>
                       </div>
                   </div>
 
@@ -2167,8 +1894,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
 
                       <div className="flex gap-4 mt-6 pt-6 border-t border-slate-100 flex-shrink-0">
                           <button onClick={fecharModalVIP} className="flex-1 bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3.5 rounded-xl hover:bg-slate-100 transition-colors shadow-sm">Cancelar</button>
-                          <button onClick={salvarVIPReal} disabled={savingState === 'saveVip'} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-70">
-                            {savingState === 'saveVip' ? 'Salvando...' : 'Salvar Regra VIP'}</button>
+                          <button onClick={salvarVIP} className="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-sm hover:bg-blue-700 transition-colors">Salvar Regra VIP</button>
                       </div>
                   </motion.div>
               </div>
@@ -2249,7 +1975,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
        </div>
 
        <div className="flex justify-end pt-4">
-           <ProgressButton onClick={salvarConfiguracoesReais} loading={savingState === 'saveConfig'} text="Salvar Alterações" loadingText="Salvando..." className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-sm transition-colors" />
+           <ProgressButton onClick={() => triggerAcao('saveConfig', 'Configurações de CRM salvas com sucesso!')} loading={savingState === 'saveConfig'} text="Salvar Alterações" loadingText="Salvando..." className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-sm transition-colors" />
        </div>
 
        <AnimatePresence>
@@ -2298,46 +2024,45 @@ const ultimasComprasListFiltrada = useMemo(() => {
 };
 
 // ============================================================================
-// COMPONENTE ROOT (LIMPO - A PROTEÇÃO AGORA FICA NO ADMIN LAYOUT)
+// COMPONENTE ROOT
 // ============================================================================
 export default function AdminCustomers() {
   const [mainTab, setMainTab] = useState('PAINEL');
   const abasDisponiveis = ['PAINEL', 'CLIENTES (CRM)', 'BENEFÍCIOS', 'CONFIGURAÇÕES'];
 
   return (
-    <QueryClientProvider client={queryClient}>
-        <ErrorBoundary>
-        <div className="w-full min-h-screen bg-slate-50 pb-20 relative font-sans">
-            <GlobalStyles />
+    <ErrorBoundary>
+      <div className="w-full min-h-screen bg-slate-50 pb-20 relative font-sans">
+        <GlobalStyles />
 
-            <header className="mb-6 pt-4 px-4 md:px-8">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">CRM DE CLIENTES</h1>
-                        <p className="text-sm font-medium text-slate-500 mt-1">Gestão 360º de base de dados, LTV e funil de vendas.</p>
-                    </div>
+        <header className="mb-6 pt-4 px-4 md:px-8">
+            <div className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">CRM DE CLIENTES</h1>
+                    <p className="text-sm font-medium text-slate-500 mt-1">Gestão 360º de base de dados, LTV e funil de vendas.</p>
                 </div>
-                
-                <nav className="flex gap-8 border-b border-slate-200 mt-8 overflow-x-auto no-scrollbar relative w-full" aria-label="Navegação do CRM">
-                    {abasDisponiveis.map(tab => (
-                        <button 
-                        type="button" key={tab} aria-label={`Aba ${tab}`} aria-current={mainTab === tab ? "page" : undefined} onClick={() => setMainTab(tab)} 
-                        className={`relative pb-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${mainTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
-                        >
-                            {tab}
-                            {mainTab === tab && (
-                                <motion.div layoutId="activeTabIndicatorAdminMain" className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full" />
-                            )}
-                        </button>
-                    ))}
-                </nav>
-            </header>
+            </div>
+            
+            {/* O MENU FLUIDO ADICIONADO AQUI! (Textos com o hover animado do framer-motion) */}
+            <nav className="flex gap-8 border-b border-slate-200 mt-8 overflow-x-auto no-scrollbar relative w-full" aria-label="Navegação do CRM">
+                {abasDisponiveis.map(tab => (
+                    <button 
+                      type="button" key={tab} aria-label={`Aba ${tab}`} aria-current={mainTab === tab ? "page" : undefined} onClick={() => setMainTab(tab)} 
+                      className={`relative pb-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${mainTab === tab ? 'text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                    >
+                        {tab}
+                        {mainTab === tab && (
+                            <motion.div layoutId="activeTabIndicatorAdminMain" className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full" />
+                        )}
+                    </button>
+                ))}
+            </nav>
+        </header>
 
-            <main className="flex-1 min-w-0 px-4 md:px-8 relative pt-2">
-               <AdminCustomersContent mainTab={mainTab} setMainTab={setMainTab} />
-            </main>
-        </div>
-        </ErrorBoundary>
-    </QueryClientProvider>
+        <main className="flex-1 min-w-0 px-4 md:px-8 relative pt-2">
+           <AdminCustomersContent mainTab={mainTab} setMainTab={setMainTab} />
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
