@@ -29,13 +29,30 @@ class CustomerController extends Controller
         ]);
     }
 
+    /**
+     * ALGORITMO VIP INTELIGENTE
+     * Calcula o rank do cliente com base no LTV e Total de Compras.
+     */
+    private function getRank($ltv, $compras) {
+        $niveis = VipLevel::orderBy('gasto_requisito', 'desc')->get();
+        
+        foreach ($niveis as $nivel) {
+            if ($ltv >= $nivel->gasto_requisito && $compras >= $nivel->compras_requisito) {
+                return $nivel->nome;
+            }
+        }
+        
+        $padrao = VipLevel::where('is_default', true)->first();
+        return $padrao ? $padrao->nome : 'Iniciante';
+    }
+
     // =========================================================================
-    // 1. LISTAR TODOS OS CLIENTES E DADOS RELACIONAIS (Tabela Principal)
+    // 1. LISTAR TODOS OS CLIENTES E DADOS RELACIONAIS (Cálculos Matemáticos)
     // =========================================================================
     public function index(Request $request)
     {
-        // 🔒 Filtra APENAS quem é cliente, ignorando administradores e gestores da lista
-        $query = User::where('role', 'cliente')->with(['orders', 'addresses', 'auditLogs' => function($q) {
+        // 🔒 Filtra APENAS quem é cliente e carrega relacionamentos pesados
+        $query = User::where('role', 'cliente')->with(['orders.items', 'orders.history', 'addresses', 'auditLogs' => function($q) {
             $q->orderBy('created_at', 'desc');
         }])->orderBy('id', 'desc');
 
@@ -62,74 +79,127 @@ class CustomerController extends Controller
 
         $users = $query->get();
 
-        $formatted = $users->map(function($u) {
-            $pedidosPagos = $u->orders->where('status', '!=', 'CANCELADO');
-            $ltv = $pedidosPagos->sum('total');
-            $qtdCompras = $pedidosPagos->count();
-            $ultimaCompra = $pedidosPagos->sortByDesc('created_at')->first();
+        // Mapeamento e Cálculos Dinâmicos
+        $formatted = $users->map(function ($c) {
+            $pedidosValidos = $c->orders->whereNotIn('status', ['CANCELADO', 'REEMBOLSADO']);
+            $pedidosReembolsados = $c->orders->where('status', 'REEMBOLSADO');
+            $ultimoPedido = $c->orders->sortByDesc('created_at')->first();
+
+            // Variáveis Auxiliares de Cálculo
+            $descFrete = 0;
+            $descLoja = 0;
+            $cuponsUsados = 0;
+            $qtdProdutosComprados = 0;
+
+            // Varre o histórico de compras para as métricas da Tabela de Registros
+            foreach ($c->orders as $pedido) {
+                if ($pedido->status !== 'CANCELADO') {
+                    $qtdProdutosComprados += $pedido->items->sum('quantity');
+
+                    if (!empty($pedido->applied_coupons)) {
+                        $cupons = is_string($pedido->applied_coupons) ? json_decode($pedido->applied_coupons, true) : $pedido->applied_coupons;
+                        if (is_array($cupons)) {
+                            foreach ($cupons as $cupom) {
+                                $cuponsUsados++;
+                                if (($cupom['tipo'] ?? '') === 'Frete') {
+                                    $descFrete += (float) ($cupom['valor'] ?? 0);
+                                } else {
+                                    $descLoja += (float) ($cupom['valor'] ?? 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            $ltv = $pedidosValidos->sum('total');
 
             return [
-                'id' => $u->id,
-                'nome' => $u->name,
-                'email' => $u->email,
-                'avatar' => $u->avatar,
-                'cpf' => $u->cpf ?? '-',
-                'telefone' => $u->telefone ?? '-',
-                'nascimento' => $u->nascimento ?? '-',
-                'sexo' => $u->sexo ?? 'Não informado',
-                'origem' => $u->origem ?? 'Orgânico / Direto', 
-                'status' => $u->status ?? 'ATIVO',
-                'dataCadastro' => $u->created_at->format('Y-m-d'),
+                'id' => $c->id,
+                'nome' => $c->name,
+                'email' => $c->email,
+                'cpf' => $c->cpf ?? '-',
+                'telefone' => $c->telefone ?? '-',
+                'nascimento' => $c->nascimento ?? '-',
+                'sexo' => $c->sexo ?? 'Não informado',
+                'origem' => $c->origem ?? 'Direto / Loja',
+                'tags' => $c->tags ?? [],
+                'avatar' => $c->avatar ?? null,
+                'status' => $c->status ?? 'ATIVO',
+                'dataCadastro' => $c->created_at->format('Y-m-d'),
+
+                // Finanças e Pedidos Globais
                 'ltv' => (float) $ltv,
-                'compras' => $qtdCompras,
-                'ultimaCompra' => $ultimaCompra ? $ultimaCompra->created_at->format('Y-m-d') : '-',
-                'ultimaCompraValor' => $ultimaCompra ? (float) $ultimaCompra->total : 0,
-                'ultimaCompraPagamento' => $ultimaCompra ? $ultimaCompra->payment_method : '-',
-                'cuponsUsados' => 0,
-                'descontoFrete' => 0,
-                'descontoLoja' => 0,
-                'coins' => (float) ($u->coins ?? 0),
-                'cashback' => (float) ($u->cashback ?? 0),
-                'rank' => $this->getRank($ltv, $qtdCompras), // 🟢 AGORA PASSA O LTV E AS COMPRAS REAIS
-                'tags' => $u->tags ?? [],
-                'enderecos' => $u->addresses,
-                'auditLogs' => $u->auditLogs->map(function($log) {
+                'compras' => $pedidosValidos->count(),
+                'ultimaCompra' => $ultimoPedido ? $ultimoPedido->created_at->format('Y-m-d') : null,
+                'ultimaCompraValor' => $ultimoPedido ? (float) $ultimoPedido->total : 0,
+                'ultimaCompraPagamento' => $ultimoPedido ? $ultimoPedido->payment_method : null,
+                
+                // Métricas Analíticas
+                'produtosComprados' => $qtdProdutosComprados,
+                'cuponsUsados' => $cuponsUsados,
+                'descontoFrete' => $descFrete,
+                'descontoLoja' => $descLoja,
+                'coins' => (float) $c->coins,
+                'cashback' => (float) $c->cashback,
+                'rank' => $this->getRank($ltv, $pedidosValidos->count()),
+
+                // Risco e Reembolsos
+                'reembolsado' => $pedidosReembolsados->count() > 0,
+                'produtosReembolsados' => $pedidosReembolsados->sum(function($p) { return $p->items->sum('quantity'); }),
+                'reembolsosPagos' => $pedidosReembolsados->sum('total'),
+                'enderecos' => $c->addresses,
+
+                // HISTÓRICO VISUAL DE PEDIDOS (Nova Aba do CRM)
+                'pedidos' => $c->orders->map(function ($order) {
                     return [
-                        'id' => $log->id,
+                        'id' => $order->id,
+                        'status' => $order->status,
+                        'data_raw' => $order->created_at->format('Y-m-d'),
+                        'subtotal' => (float) $order->subtotal,
+                        'frete' => (float) $order->frete,
+                        'desconto' => (float) $order->desconto,
+                        'total' => (float) $order->total,
+                        'itens' => $order->items->map(function ($item) {
+                            return [
+                                'nome' => $item->product_name,
+                                'variacao' => $item->variation_name,
+                                'qtd' => $item->quantity,
+                                'img' => $item->product_image,
+                            ];
+                        })->values()
+                    ];
+                })->values(),
+
+                // TIMELINE AUTOMÁTICA (Para a Aba Audit/Timeline)
+                'auditLogs' => $c->orders->flatMap(function ($order) {
+                    return $order->history->map(function ($log) use ($order) {
+                        return [
+                            'id' => $log->id,
+                            'data' => $log->created_at->format('Y-m-d\TH:i:s'),
+                            'titulo' => "Atualização no Pedido #{$order->id}",
+                            'desc' => $log->event,
+                            'tipo' => str_contains(strtolower($log->event), 'reembolso') || str_contains(strtolower($log->event), 'cancelado') ? 'warning' : 'info'
+                        ];
+                    });
+                })->merge($c->auditLogs->map(function($log) {
+                    // Logs de ações diretas do CRM
+                    return [
+                        'id' => 'crm_'.$log->id,
                         'data' => $log->created_at->format('Y-m-d\TH:i:s'),
                         'titulo' => $log->acao,
                         'desc' => $log->detalhes,
                         'tipo' => 'info'
                     ];
-                })
+                }))->sortByDesc('data')->values()
             ];
         });
 
         return response()->json(['status' => 'success', 'data' => $formatted]);
     }
 
-    /**
-     * ALGORITMO VIP INTELIGENTE
-     * Agora ele lê as regras reais que você cadastra no painel React!
-     */
-    private function getRank($ltv, $compras) {
-        // Traz os níveis ordenados pelo maior requisito de gasto
-        $niveis = VipLevel::orderBy('gasto_requisito', 'desc')->get();
-        
-        foreach ($niveis as $nivel) {
-            // Verifica se o cliente atingiu a meta de R$ E a meta de Quantidade de Compras
-            if ($ltv >= $nivel->gasto_requisito && $compras >= $nivel->compras_requisito) {
-                return $nivel->nome;
-            }
-        }
-        
-        // Se não atingir nenhum requisito, procura o Nível marcado como Padrão (Estrela)
-        $padrao = VipLevel::where('is_default', true)->first();
-        return $padrao ? $padrao->nome : 'Iniciante';
-    }
-
     // =========================================================================
-    // 2. BUSCAR UM ÚNICO CLIENTE (Perfil 360)
+    // 2. BUSCAR UM ÚNICO CLIENTE
     // =========================================================================
     public function show($id)
     {
@@ -141,7 +211,7 @@ class CustomerController extends Controller
     }
 
     // =========================================================================
-    // 3. ATUALIZAR TELEFONE (Com Auditoria)
+    // 3. ATUALIZAR TELEFONE
     // =========================================================================
     public function updatePhone(Request $request, $id)
     {
@@ -162,7 +232,7 @@ class CustomerController extends Controller
     }
 
     // =========================================================================
-    // 4. ATUALIZAR E-MAIL (Com Auditoria)
+    // 4. ATUALIZAR E-MAIL
     // =========================================================================
     public function updateEmail(Request $request, $id)
     {
@@ -183,7 +253,7 @@ class CustomerController extends Controller
     }
 
     // =========================================================================
-    // 5. ATUALIZAR DADOS SENSÍVEIS E SALVAR COMPROVANTE (Upload)
+    // 5. ATUALIZAR DADOS SENSÍVEIS (E SALVAR ARQUIVO COMPROBATÓRIO)
     // =========================================================================
     public function updateSensitiveData(Request $request, $id)
     {
@@ -245,7 +315,6 @@ class CustomerController extends Controller
         $cliente->save();
 
         $titulo = $novoStatus === 'INATIVO' ? 'Conta Suspensa / Bloqueada' : 'Conta Reativada pelo Admin';
-
         $this->registrarLog($cliente->id, $titulo, "Motivo: {$request->motivo}");
 
         return response()->json(['status' => 'success', 'message' => "A conta do cliente foi alterada para {$novoStatus} com sucesso."]);
@@ -308,7 +377,6 @@ class CustomerController extends Controller
     // =========================================================================
     public function getDashboardMetrics()
     {
-        // 1. Receita e Crescimento Geral
         $receitaBruta = \App\Models\Order::where('status', '!=', 'CANCELADO')->sum('total');
         $totalPedidos = \App\Models\Order::where('status', '!=', 'CANCELADO')->count();
         $ticketMedio  = $totalPedidos > 0 ? ($receitaBruta / $totalPedidos) : 0;
@@ -330,7 +398,6 @@ class CustomerController extends Controller
             $crescimentoReceita = 100;
         }
 
-        // 2. Porcentagem de Novos Clientes neste mês
         $clientesTotais = User::where('role', 'cliente')->count();
         $clientesMesAtual = User::where('role', 'cliente')
                                 ->whereMonth('created_at', now()->month)
@@ -339,7 +406,6 @@ class CustomerController extends Controller
         
         $crescimentoClientes = $clientesTotais > 0 ? ($clientesMesAtual / $clientesTotais) * 100 : 0;
 
-        // 3. Diferença de Ticket Médio / LTV (Mês atual vs Mês anterior)
         $pedidosMesAtualCount = \App\Models\Order::where('status', '!=', 'CANCELADO')
                                  ->whereMonth('created_at', now()->month)
                                  ->whereYear('created_at', now()->year)
@@ -361,13 +427,13 @@ class CustomerController extends Controller
             'total_pedidos' => $totalPedidos,
             'ticket_medio'  => (float) $ticketMedio,
             'crescimento'   => (float) $crescimentoReceita,
-            'novos_clientes_pct' => (float) $crescimentoClientes, // 🟢 NOVO DADO
-            'diferenca_ltv'      => (float) $diferencaLTV         // 🟢 NOVO DADO
+            'novos_clientes_pct' => (float) $crescimentoClientes,
+            'diferenca_ltv'      => (float) $diferencaLTV
         ]);
     }
 
     // =========================================================================
-    // 11. REGRAS E NÍVEIS VIP
+    // 11. REGRAS E NÍVEIS VIP (Com Suporte a Upload de Imagem)
     // =========================================================================
     public function getVipLevels() {
         try {
@@ -381,7 +447,8 @@ class CustomerController extends Controller
     public function storeOrUpdateVipLevel(Request $request)
     {
         $request->validate([
-            'nome' => 'required|string'
+            'nome' => 'required|string',
+            'imagem' => 'nullable|file|mimes:jpeg,png,jpg,svg,webp|max:2048' // Máx 2MB para ícones VIP
         ]);
 
         if ($request->is_default) {
@@ -391,12 +458,21 @@ class CustomerController extends Controller
         $fields = $request->only([
             'nome', 'is_default', 'gasto_requisito', 'compras_requisito',
             'mult_coins', 'desc_frete', 'desc_produtos', 'acumula_frete',
-            'frequencia_uso', 'limite_uso', 'imagem'
+            'frequencia_uso', 'limite_uso'
         ]);
+
+        // 🟢 UPLOAD DA IMAGEM DA BADGE
+        if ($request->hasFile('imagem')) {
+            $path = $request->file('imagem')->store('vip_badges', 'public');
+            $fields['imagem'] = asset('storage/' . $path);
+        }
 
         $vip = VipLevel::updateOrCreate(['id' => $request->id], $fields);
 
-        return response()->json(['status' => 'success', 'data' => $vip]);
+        // Dispara uma auditoria global (opcional)
+        $this->registrarLog(1, 'Regra VIP Atualizada', "O Nível VIP '{$vip->nome}' foi modificado/criado.");
+
+        return response()->json(['status' => 'success', 'message' => 'Nível VIP processado.', 'data' => $vip]);
     }
 
     public function deleteVipLevel($id)
