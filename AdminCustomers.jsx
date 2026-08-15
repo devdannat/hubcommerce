@@ -710,7 +710,8 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
   const [timelineDateRange, setTimelineDateRange] = useState({ start: '', end: '' });
   const [loadingTimeline, setLoadingTimeline] = useState(false);
   
-  // 🟢 Estados do Histórico de Pedidos
+    // 🟢 NOVA ABA HISTÓRICO PEDIDOS - FILTROS
+  const [orderHistoryTab, setOrderHistoryTab] = useState('TODOS');
   const [orderHistoryPage, setOrderHistoryPage] = useState(1);
   const [orderHistoryDateOpen, setOrderHistoryDateOpen] = useState(false);
   const [orderHistoryDateRange, setOrderHistoryDateRange] = useState({ start: '', end: '' });
@@ -853,17 +854,25 @@ const ultimasComprasListFiltrada = useMemo(() => {
       setTimeout(() => setLoadingTimeline(false), 800);
   };
 
+    // 🟢 FILTRAGEM DO HISTÓRICO DE PEDIDOS DO CLIENTE
   const historicoPedidosFiltrado = useMemo(() => {
       if(!clienteSelecionado || !clienteSelecionado.pedidos) return [];
       let ped = clienteSelecionado.pedidos;
+      
+      // Filtro de Data
       if (orderHistoryDateRange.start) ped = ped.filter(p => new Date(p.data_raw) >= new Date(orderHistoryDateRange.start));
       if (orderHistoryDateRange.end) ped = ped.filter(p => new Date(p.data_raw) <= new Date(orderHistoryDateRange.end));
+      
+      // Filtro de Status
+      if (orderHistoryTab === 'CONCLUÍDOS') ped = ped.filter(p => ['ENTREGUE', 'DESPACHADO', 'SEPARACAO'].includes(p.status));
+      else if (orderHistoryTab === 'REEMBOLSADOS') ped = ped.filter(p => p.status === 'REEMBOLSADO');
+      else if (orderHistoryTab === 'CANCELADOS') ped = ped.filter(p => p.status === 'CANCELADO');
+
       return ped.sort((a,b) => new Date(b.data_raw).getTime() - new Date(a.data_raw).getTime());
-  }, [clienteSelecionado, orderHistoryDateRange]);
+  }, [clienteSelecionado, orderHistoryDateRange, orderHistoryTab]);
 
   const totalOrderHistoryPages = Math.ceil(historicoPedidosFiltrado.length / orderHistoryPerPage) || 1;
   const orderHistoryPaginados = historicoPedidosFiltrado.slice((orderHistoryPage - 1) * orderHistoryPerPage, orderHistoryPage * orderHistoryPerPage);
-
   const rankLogsFiltrados = useMemo(() => {
       if(!clienteSelecionado || !clienteSelecionado.auditLogs) return [];
       return clienteSelecionado.auditLogs.filter(l => l.titulo.includes("Nível VIP") || l.titulo.includes("Classificação")).sort((a,b) => new Date(b.data).getTime() - new Date(a.data).getTime());
@@ -1154,21 +1163,22 @@ const ultimasComprasListFiltrada = useMemo(() => {
         </div>
       </section>
     */}
-      <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col relative z-20">
-{/* 🟢 CORREÇÃO: Header com z-[90] para ficar acima da tabela */}
-        <header className="p-6 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/50 relative z-[90]">
+      <section className="bg-white border border-slate-200 rounded-3xl shadow-sm flex flex-col relative z-20 min-h-[600px]">
+        <header className="p-6 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-slate-50/50 relative z-[90] rounded-t-3xl">
           <div>
             <h3 className="font-bold text-slate-800 text-lg flex items-center gap-3"><span className="text-blue-500"><Icons.Package className="w-5 h-5"/></span> Registros de Compra</h3>
             <p className="text-xs text-slate-500 mt-1">Visão em tempo real das conversões mais recentes.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+            {/* 🟢 O BOTÃO REFRESH VEIO PARA CÁ! AO LADO DO FILTRO LOCAL */}
+            <button onClick={() => refetchClients()} className={`w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200 shadow-sm flex items-center justify-center transition-all ${isFetchingClients ? 'animate-spin text-blue-500 border-blue-300' : ''}`} title="Sincronizar Manualmente">
+                <Icons.Refresh className="w-4 h-4"/>
+            </button>
             <div className="relative z-[100]">
               <HoverProgressRoundButton 
-                  text={recentDateRange.start ? `${formatDateBR(recentDateRange.start)} até ${formatDateBR(recentDateRange.end)}` : 'Todo o Período'}
+                  text={recentDateRange.start ? `${formatDateBR(recentDateRange.start)} até ${formatDateBR(recentDateRange.end)}` : 'Filtrar Tabela'}
                   onClick={() => setRecentDateOpen(!recentDateOpen)} 
-                  icon={Icons.Calendar} 
-                  ariaLabel="Filtrar Período Recentes"
-                  loading={savingState === 'filtroRecent'} 
+                  icon={Icons.Calendar} ariaLabel="Filtrar Período Recentes" loading={savingState === 'filtroRecent'} 
               />
               <DateFilterPopup 
                 isOpen={recentDateOpen} onClose={() => setRecentDateOpen(false)}
@@ -1177,19 +1187,17 @@ const ultimasComprasListFiltrada = useMemo(() => {
                 onApply={() => { triggerAcao('filtroRecent', 'Lista Atualizada!'); setRecentDateOpen(false); }}
               />
             </div>
+            {/* 🟢 O FILTRO EXIBIR VEIO PARA O TOPO! */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-sm flex-1 sm:flex-auto">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Qtd Até:</span>
-              <input type="number" placeholder="Ilimitado" min="1" value={ultimasQtdProd} onChange={(e) => setUltimasQtdProd(e.target.value)} className="w-16 text-xs font-bold text-slate-900 bg-transparent outline-none focus:border-blue-500" />
-            </div>
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-sm flex-1 sm:flex-auto">
-              <label htmlFor="compra_ultimas" className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Valor Até R$:</label>
-              <input id="compra_ultimas" type="number" placeholder={`Máx: ${maxCompraGeral}`} min="1" value={ultimasMaxCompra} onChange={(e) => setUltimasMaxCompra(e.target.value)} className="w-24 text-xs font-bold text-slate-900 bg-transparent outline-none focus:border-blue-500" />
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Exibir:</span>
+                <select value={registrosPerPage} onChange={(e) => {setRegistrosPerPage(Number(e.target.value)); setRegistrosPage(1);}} className="bg-transparent text-sm font-bold text-slate-800 outline-none cursor-pointer">
+                    <option value={10}>10</option><option value={20}>20</option><option value={30}>30</option><option value={50}>50</option>
+                </select>
             </div>
           </div>
         </header>
         
-        {/* 🟢 CORREÇÃO: Tabela com z-0 para ficar por baixo do menu suspenso */}
-        <div className="overflow-x-auto w-full custom-scrollbar relative z-0">
+        <div className="overflow-x-auto w-full custom-scrollbar relative z-0 flex-1 flex flex-col">
           <table className="w-full text-left text-sm text-slate-600 whitespace-nowrap min-w-[1200px]">
             <thead className="bg-slate-50/50 text-slate-500 uppercase font-bold text-[10px] tracking-widest border-b border-slate-200">
               <tr>
@@ -1204,37 +1212,33 @@ const ultimasComprasListFiltrada = useMemo(() => {
                 <th className="px-6 py-4 text-center">Reembolsos</th>
               </tr>
             </thead>
-            <motion.tbody variants={containerVariants} initial="hidden" animate="show" className="divide-y divide-slate-100">
-              {registrosPaginados.length > 0 ? registrosPaginados.map(c => (
-                <motion.tr variants={itemVariants} key={`uc-${c.id}`} className="hover:bg-slate-50 cursor-pointer transition-colors group" onClick={() => abrirPerfilCliente(c)}>
-                  <td className="px-6 py-4">{renderClienteCell(c)}</td>
-                  <td className="px-6 py-4 text-right font-black text-emerald-600 text-base">{formatCurrency(c?.ultimaCompraValor)}</td>
-                  <td className="px-6 py-4 text-center font-bold text-slate-800">{safeNum(c?.produtosComprados)}</td>
-                  <td className="px-6 py-4 text-slate-500 font-medium">{formatDateBR(c?.ultimaCompra)}</td>
-                  <td className="px-6 py-4 text-center"><span className="text-[10px] font-black uppercase bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center justify-center gap-1 w-max mx-auto shadow-sm"><Icons.CreditCard className="w-3 h-3"/> {safeStr(c?.ultimaCompraPagamento) || 'ND'}</span></td>
-                  <td className="px-6 py-4 text-center font-bold text-slate-700">{safeNum(c?.cuponsUsados) > 0 ? safeNum(c?.cuponsUsados) : '-'}</td>
-                  <td className="px-6 py-4 text-right text-rose-500 font-medium">{safeNum(c?.descontoFrete) > 0 ? formatCurrency(c.descontoFrete) : '-'}</td>
-                  <td className="px-6 py-4 text-right text-rose-500 font-medium">{safeNum(c?.descontoLoja) > 0 ? formatCurrency(c.descontoLoja) : '-'}</td>
-                  <td className="px-6 py-4 text-center">
-                      {c?.reembolsado ? <span className="px-2.5 py-1 bg-rose-50 text-rose-600 font-bold text-[10px] rounded-lg border border-rose-200 uppercase shadow-sm">Reembolsado</span> : <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] rounded-lg border border-emerald-200 uppercase shadow-sm">Sem Reembolso</span>}
-                  </td>
-                </motion.tr>
-              )) : (<tr><td colSpan="9" className="p-16 text-center text-slate-500 font-medium">Nenhum registo atende aos filtros atuais.</td></tr>)}
-            </motion.tbody>
+            <tbody className="divide-y divide-slate-100">
+              <AnimatePresence mode="wait">
+                  {registrosPaginados.length > 0 ? registrosPaginados.map(c => (
+                    <motion.tr layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={`uc-${c.id}`} className="hover:bg-slate-50 cursor-pointer transition-colors group" onClick={() => abrirPerfilCliente(c)}>
+                      <td className="px-6 py-4">{renderClienteCell(c)}</td>
+                      <td className="px-6 py-4 text-right font-black text-emerald-600 text-base">{formatCurrency(c?.ultimaCompraValor)}</td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-800">{safeNum(c?.produtosComprados)}</td>
+                      <td className="px-6 py-4 text-slate-500 font-medium">{formatDateBR(c?.ultimaCompra)}</td>
+                      <td className="px-6 py-4 text-center"><span className="text-[10px] font-black uppercase bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200 flex items-center justify-center gap-1 w-max mx-auto shadow-sm"><Icons.CreditCard className="w-3 h-3"/> {safeStr(c?.ultimaCompraPagamento) || 'ND'}</span></td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-700">{safeNum(c?.cuponsUsados) > 0 ? safeNum(c?.cuponsUsados) : '-'}</td>
+                      <td className="px-6 py-4 text-right text-rose-500 font-medium">{safeNum(c?.descontoFrete) > 0 ? formatCurrency(c.descontoFrete) : '-'}</td>
+                      <td className="px-6 py-4 text-right text-rose-500 font-medium">{safeNum(c?.descontoLoja) > 0 ? formatCurrency(c.descontoLoja) : '-'}</td>
+                      <td className="px-6 py-4 text-center">
+                          {c?.reembolsado ? <span className="px-2.5 py-1 bg-rose-50 text-rose-600 font-bold text-[10px] rounded-lg border border-rose-200 uppercase shadow-sm">Reembolsado</span> : <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] rounded-lg border border-emerald-200 uppercase shadow-sm">Sem Reembolso</span>}
+                      </td>
+                    </motion.tr>
+                  )) : (<motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}><td colSpan="9" className="p-16 text-center text-slate-500 font-medium">Nenhum registo atende aos filtros atuais.</td></motion.tr>)}
+              </AnimatePresence>
+            </tbody>
           </table>
         </div>
 
+        {/* 🟢 Paginação Presa no Rodapé com mt-auto */}
         {ultimasComprasListFiltrada.length > 0 && (
-            <footer className="p-6 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4">
-                <div className="flex items-center gap-2">
-                    <span>Exibir:</span>
-                    <select value={registrosPerPage} onChange={(e) => {setRegistrosPerPage(Number(e.target.value)); setRegistrosPage(1);}} className="bg-white border border-slate-200 text-slate-700 rounded-lg px-2 py-1 outline-none cursor-pointer focus:border-blue-500 transition-all shadow-sm">
-                        <option value={10}>10</option><option value={20}>20</option><option value={30}>30</option><option value={50}>50</option>
-                    </select>
-                    <span className="ml-4">Mostrando <strong className="text-slate-800">{((registrosPage - 1) * registrosPerPage) + 1}</strong> até <strong className="text-slate-800">{Math.min(registrosPage * registrosPerPage, ultimasComprasListFiltrada.length)}</strong> de <strong className="text-slate-800">{ultimasComprasListFiltrada.length}</strong> compras</span>
-                </div>
+            <footer className="mt-auto p-6 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4 rounded-b-3xl">
+                <span className="ml-4">Página {registrosPage} de {totalRegistrosPages}</span>
                 <div className="flex items-center gap-4">
-                    <span>Página {registrosPage} de {totalRegistrosPages}</span>
                     <div className="flex gap-2">
                         <button type="button" aria-label="Página Anterior" onClick={() => setRegistrosPage(p => Math.max(1, p - 1))} disabled={registrosPage === 1} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-4 h-4" /></button>
                         <button type="button" aria-label="Próxima Página" onClick={() => setRegistrosPage(p => Math.min(totalRegistrosPages, p + 1))} disabled={registrosPage === totalRegistrosPages} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-4 h-4" /></button>
@@ -1817,57 +1821,142 @@ const ultimasComprasListFiltrada = useMemo(() => {
              )}
           </motion.section>
         )}
+        {/* 🟢 ABA: HISTÓRICO DE PEDIDOS DO CLIENTE */}
         {crmSubTab === 'HISTÓRICO DE PEDIDOS' && (
           <motion.section key="HISTORICO" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto w-full flex flex-col space-y-6">
-              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex-1 flex flex-col min-h-[600px]">
-                  <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-slate-100">
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex-1 flex flex-col min-h-[650px]">
+                  
+                  <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-slate-100 shrink-0">
                       <div>
                           <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Package className="w-6 h-6 text-blue-500"/> Histórico de Pedidos do Cliente</h3>
-                          <p className="text-xs text-slate-500 mt-1 font-medium">Visão cronológica de todas as conversões, itens e valores.</p>
+                          <p className="text-xs text-slate-500 mt-1 font-medium">Visão cronológica de todas as compras, itens, reembolsos e descontos.</p>
+                      </div>
+                      <div className="flex items-center gap-3 w-full md:w-auto">
+                          {/* 🟢 ABAS DE FILTRO DE STATUS */}
+                          <div className="flex gap-2 border border-slate-200 bg-slate-50 p-1 rounded-xl shadow-sm overflow-x-auto no-scrollbar">
+                              {['TODOS', 'CONCLUÍDOS', 'REEMBOLSADOS', 'CANCELADOS'].map(tab => (
+                                  <button key={tab} onClick={() => { setOrderHistoryTab(tab); setOrderHistoryPage(1); }} className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${orderHistoryTab === tab ? 'bg-white text-blue-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
+                                      {tab}
+                                  </button>
+                              ))}
+                          </div>
+                          
+                          <div className="relative z-50">
+                              <HoverProgressRoundButton 
+                                  text={(orderHistoryDateRange.start || orderHistoryDateRange.end) ? 'Filtrado' : 'Período'} 
+                                  onClick={() => setOrderHistoryDateOpen(!orderHistoryDateOpen)} 
+                                  icon={Icons.Calendar} ariaLabel="Filtrar Período Histórico" loading={savingState === 'filtroHist'} 
+                              />
+                              <AnimatePresence>
+                                  {orderHistoryDateOpen && (
+                                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 top-14 bg-white border border-slate-200 shadow-xl rounded-2xl p-5 z-50 w-64">
+                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Início</label>
+                                          <input type="date" value={orderHistoryDateRange.start} onChange={e => setOrderHistoryDateRange({...orderHistoryDateRange, start: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
+                                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Fim</label>
+                                          <input type="date" value={orderHistoryDateRange.end} onChange={e => setOrderHistoryDateRange({...orderHistoryDateRange, end: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-5 focus:ring-2 focus:ring-blue-500/20" />
+                                          <div className="flex gap-2">
+                                              <button onClick={() => {setOrderHistoryDateRange({start:'', end:''}); setOrderHistoryDateOpen(false); setOrderHistoryPage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg py-2.5 transition-colors">Limpar</button>
+                                              <button onClick={() => { triggerAcao('filtroHist', 'Histórico Filtrado!'); setOrderHistoryDateOpen(false); setOrderHistoryPage(1); }} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-lg py-2.5 transition-colors shadow-sm">Aplicar</button>
+                                          </div>
+                                      </motion.div>
+                                  )}
+                              </AnimatePresence>
+                          </div>
                       </div>
                   </header>
                   
                   <div className="space-y-6 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                      {orderHistoryPaginados.length > 0 ? orderHistoryPaginados.map(pedido => (
+                      {orderHistoryPaginados.length > 0 ? orderHistoryPaginados.map(pedido => {
+                          const dataEnvio = pedido.history?.find(h => h.evento.includes('Despachado'))?.data || 'Aguardando';
+                          const dataEntrega = pedido.history?.find(h => h.evento.includes('Entregue'))?.data || 'Aguardando';
+
+                          return (
                           <div key={pedido.id} className="border border-slate-200 rounded-2xl p-6 bg-slate-50/50 hover:bg-white transition-all shadow-sm group">
-                              <div className="flex justify-between items-start mb-4">
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-5 border-b border-slate-100">
                                   <div>
-                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{formatDateBR(pedido.data_raw)}</span>
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Data da Compra: {formatDateBR(pedido.data_raw)}</span>
                                       <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">Pedido #{pedido.id}</h4>
                                   </div>
                                   <span className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg border ${pedido.status === 'CANCELADO' ? 'bg-rose-50 text-rose-700 border-rose-200' : pedido.status === 'REEMBOLSADO' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>{pedido.status}</span>
                               </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
-                                  <div className="sm:col-span-2">
-                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Itens Comprados</p>
-                                      <div className="space-y-3">
-                                          {pedido.itens?.map((item, i) => (
-                                              <div key={i} className="flex gap-3 items-center">
-                                                  <img src={item.img} className="w-10 h-10 rounded-lg object-cover border border-slate-200" alt=""/>
-                                                  <div className="flex flex-col">
-                                                      <span className="text-xs font-bold text-slate-800">{item.nome}</span>
-                                                      <span className="text-[9px] text-slate-500 uppercase">{item.qtd}x | {item.variacao}</span>
-                                                  </div>
+                              
+                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                  {/* INFO DOS ITENS COMPRADOS */}
+                                  <div className="lg:col-span-5 space-y-4">
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.Box /> Itens Comprados</p>
+                                      {pedido.itens?.map((item, i) => (
+                                          <div key={i} className="flex gap-4 items-start bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                              <img src={item.img} className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" alt=""/>
+                                              <div className="flex flex-col w-full">
+                                                  <span className="text-xs font-bold text-slate-800 leading-tight">{item.nome}</span>
+                                                  <span className="text-[10px] text-slate-500 font-medium mt-1">{item.qtd}x | SKU: <span className="font-mono text-slate-400">{item.variacaoSku}</span></span>
+                                                  <span className="text-[10px] font-bold text-blue-600 mt-1">{item.variacao}</span>
+                                                  
+                                                  {/* ITEM PERSONALIZADO NESTE HISTÓRICO */}
+                                                  {item.personalizacao && (
+                                                      <div className="mt-2 bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-lg text-[10px] text-slate-700">
+                                                          <span className="font-black text-indigo-700 uppercase tracking-widest block mb-1">✍️ Personalizado</span>
+                                                          {item.personalizacao.texto && <p>Texto: "{item.personalizacao.texto}"</p>}
+                                                          {item.personalizacao.imagem && <a href={item.personalizacao.imagem} download target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold mt-1 inline-block flex items-center gap-1"><Icons.Download /> Imagem HD</a>}
+                                                      </div>
+                                                  )}
                                               </div>
-                                          ))}
+                                          </div>
+                                      ))}
+                                  </div>
+
+                                  {/* DETALHES DE LOGÍSTICA E DESCONTOS */}
+                                  <div className="lg:col-span-4 space-y-4 border-l border-slate-100 pl-8">
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.MapPin /> Logística e Benefícios</p>
+                                      
+                                      <div className="space-y-2 text-[10px] text-slate-600 font-medium">
+                                          <div className="flex justify-between"><span className="text-slate-400 uppercase tracking-wider font-bold">Data Envio:</span> <strong className="text-slate-700">{dataEnvio}</strong></div>
+                                          <div className="flex justify-between"><span className="text-slate-400 uppercase tracking-wider font-bold">Data Entrega:</span> <strong className="text-slate-700">{dataEntrega}</strong></div>
+                                      </div>
+
+                                      <div className="mt-4 pt-4 border-t border-slate-100">
+                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Cupons Utilizados</p>
+                                          <div className="space-y-1.5">
+                                              {pedido.cupons && pedido.cupons.length > 0 ? pedido.cupons.map((cupom, idx) => (
+                                                  <div key={idx} className="flex justify-between items-center text-[10px]">
+                                                      <span className="font-black text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{cupom.nome}</span>
+                                                      <span className="font-bold text-emerald-600">- {formatCurrency(cupom.valor)} ({cupom.tipo})</span>
+                                                  </div>
+                                              )) : <span className="text-[10px] text-slate-400 font-medium">Nenhum cupom usado.</span>}
+                                          </div>
+                                      </div>
+
+                                      <div className="mt-4 pt-4 border-t border-slate-100">
+                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Endereço Registrado</p>
+                                          <p className="text-[10px] font-medium text-slate-600 leading-relaxed">
+                                              {pedido.endereco?.logradouro}, {pedido.endereco?.numero} - {pedido.endereco?.bairro} <br/>
+                                              {pedido.endereco?.cidade}/{pedido.endereco?.uf} - CEP {pedido.endereco?.cep}
+                                          </p>
                                       </div>
                                   </div>
-                                  <div className="space-y-2 text-xs font-medium text-slate-600 border-l border-slate-100 pl-6">
-                                      <div className="flex justify-between"><span>Subtotal:</span><strong>{formatCurrency(pedido.subtotal)}</strong></div>
-                                      <div className="flex justify-between"><span>Frete:</span><strong>{formatCurrency(pedido.frete)}</strong></div>
-                                      <div className="flex justify-between text-emerald-600"><span>Descontos:</span><strong>-{formatCurrency(pedido.desconto)}</strong></div>
-                                      <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-100"><span className="font-black text-slate-900 uppercase">Total Pago:</span><strong className="text-base text-slate-900">{formatCurrency(pedido.total)}</strong></div>
+
+                                  {/* CUSTOS E VALOR FINAL */}
+                                  <div className="lg:col-span-3 space-y-3 text-xs font-medium text-slate-600 border-l border-slate-100 pl-8 flex flex-col justify-end">
+                                      <div className="flex justify-between"><span>Subtotal:</span><strong className="text-slate-800">{formatCurrency(pedido.subtotal)}</strong></div>
+                                      <div className="flex justify-between"><span>Frete:</span><strong className="text-slate-800">{formatCurrency(pedido.frete)}</strong></div>
+                                      <div className="flex justify-between text-emerald-600"><span>Descontos Totais:</span><strong>-{formatCurrency(pedido.desconto)}</strong></div>
+                                      <div className="flex justify-between items-center pt-3 mt-1 border-t border-slate-200">
+                                          <span className="font-black text-slate-400 uppercase tracking-widest text-[10px]">Total Pago</span>
+                                          <strong className="text-xl font-black text-slate-900">{formatCurrency(pedido.total)}</strong>
+                                      </div>
                                   </div>
                               </div>
                           </div>
-                      )) : (
-                          <div className="py-12 text-center text-slate-500 font-medium">Este cliente ainda não possui histórico de pedidos no sistema.</div>
+                          )
+                      }) : (
+                          <div className="py-12 text-center text-slate-500 font-medium">Este cliente ainda não possui histórico de pedidos para os filtros selecionados.</div>
                       )}
                   </div>
 
+                  {/* 🟢 PAGINAÇÃO PRESA NO FUNDO DO CARD */}
                   {historicoPedidosFiltrado.length > orderHistoryPerPage && (
-                      <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 shrink-0">
-                          <span>Pág. {orderHistoryPage} de {totalOrderHistoryPages}</span>
+                      <div className="mt-auto pt-6 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 shrink-0">
+                          <span>Página {orderHistoryPage} de {totalOrderHistoryPages}</span>
                           <div className="flex gap-2">
                               <button type="button" onClick={() => setOrderHistoryPage(p => Math.max(1, p - 1))} disabled={orderHistoryPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 disabled:opacity-50 transition-colors shadow-sm">&lt;</button>
                               <button type="button" onClick={() => setOrderHistoryPage(p => Math.min(totalOrderHistoryPages, p + 1))} disabled={orderHistoryPage === totalOrderHistoryPages} className="w-8 h-8 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 disabled:opacity-50 transition-colors shadow-sm">&gt;</button>
@@ -1877,16 +1966,19 @@ const ultimasComprasListFiltrada = useMemo(() => {
               </div>
           </motion.section>
         )}
+        {/* 🟢 ABA: TIMELINE / AUDITORIA */}
         {crmSubTab === 'TIMELINE (AUDIT)' && (
           <motion.section key="TIMELINE" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-sm w-full flex flex-col h-[650px] overflow-hidden">
              
-             <header className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+             <header className="p-6 sm:p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                  <div>
                      <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Activity className="w-6 h-6 text-blue-500"/> Registro de Auditoria (Logs)</h3>
                      <p className="text-xs text-slate-500 mt-1 font-medium">Histórico imutável de ações, transações e segurança desta conta.</p>
                  </div>
-                 <div className="flex items-center gap-3 w-full sm:w-auto relative">
-                     <div className="relative shrink-0 z-[50]">
+                 
+                 {/* FLEX AJUSTADO: Botões alinhados rígidos e pop-up do calendário isolado */}
+                 <div className="flex items-center gap-3 w-full sm:w-auto">
+                     <div className="relative z-[50]">
                          <HoverProgressRoundButton 
                              text={(timelineDateRange.start || timelineDateRange.end) ? 'Filtrado' : 'Filtrar Período'}
                              onClick={() => setTimelineDateOpen(!timelineDateOpen)} 
@@ -1899,8 +1991,10 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 top-14 bg-white border border-slate-200 shadow-xl rounded-2xl p-5 z-50 w-64">
                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Início</label>
                                       <input type="date" value={timelineDateRange.start} onChange={e => setTimelineDateRange({...timelineDateRange, start: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
+                                      
                                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Fim</label>
                                       <input type="date" value={timelineDateRange.end} onChange={e => setTimelineDateRange({...timelineDateRange, end: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-5 focus:ring-2 focus:ring-blue-500/20" />
+                                      
                                       <div className="flex gap-2">
                                           <button onClick={() => {setTimelineDateRange({start:'', end:''}); setTimelineDateOpen(false); setTimelinePage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg py-2.5 transition-colors">Limpar</button>
                                           <button onClick={aplicarFiltroTimeline} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-lg py-2.5 transition-colors shadow-sm">Aplicar</button>
@@ -1909,14 +2003,18 @@ const ultimasComprasListFiltrada = useMemo(() => {
                               )}
                           </AnimatePresence>
                      </div>
+                     
                      <ProgressButton 
                         onClick={() => triggerAcao('exportPdf', 'Download do Relatório Iniciado.')} 
-                        loading={savingState === 'exportPdf'} text="Exportar PDF" icon={Icons.Download} 
+                        loading={savingState === 'exportPdf'} 
+                        text="Exportar PDF" 
+                        icon={Icons.Download} 
                         className="px-4 py-3 bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2" 
                      />
                  </div>
              </header>
 
+             {/* LISTA COM FLEX-1 PARA NÃO DEIXAR O RODAPÉ SUBIR E O CARD ENCOLHER */}
              <div className="p-8 sm:p-12 relative flex-1 overflow-y-auto custom-scrollbar">
                  <div className="absolute left-[59px] top-12 bottom-12 w-[2px] bg-slate-100 hidden sm:block"></div>
                  <div className="space-y-8 relative z-10">
@@ -1942,18 +2040,17 @@ const ultimasComprasListFiltrada = useMemo(() => {
                  </div>
              </div>
 
-             {auditLogsFiltrados.length > 0 && (
-                <footer className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4 mt-auto shrink-0">
-                    <span>Mostrando {(timelinePage - 1) * timelinePerPage + 1} até {Math.min(timelinePage * timelinePerPage, auditLogsFiltrados.length)} de {auditLogsFiltrados.length} logs</span>
-                    <div className="flex items-center gap-4">
-                        <span>Página {timelinePage} de {totalTimelinePages}</span>
-                        <div className="flex gap-2">
-                            <button type="button" onClick={() => setTimelinePage(p => Math.max(1, p - 1))} disabled={timelinePage === 1} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-4 h-4" /></button>
-                            <button type="button" onClick={() => setTimelinePage(p => Math.min(totalTimelinePages, p + 1))} disabled={timelinePage === totalTimelinePages} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-4 h-4" /></button>
-                        </div>
-                    </div>
-                </footer>
-             )}
+             {/* PAGINAÇÃO PRESA AO RODAPÉ (SHRINK-0 IMPEDE DELA SUMIR OU SUBIR) */}
+             <footer className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4 mt-auto shrink-0">
+                 <span>Mostrando {(timelinePage - 1) * timelinePerPage + 1} até {Math.min(timelinePage * timelinePerPage, auditLogsFiltrados.length)} de {auditLogsFiltrados.length} logs</span>
+                 <div className="flex items-center gap-4">
+                     <span>Página {timelinePage} de {totalTimelinePages}</span>
+                     <div className="flex gap-2">
+                         <button type="button" onClick={() => setTimelinePage(p => Math.max(1, p - 1))} disabled={timelinePage === 1} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-4 h-4" /></button>
+                         <button type="button" onClick={() => setTimelinePage(p => Math.min(totalTimelinePages, p + 1))} disabled={timelinePage === totalTimelinePages} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-4 h-4" /></button>
+                     </div>
+                 </div>
+             </footer>
           </motion.section>
         )}
       </AnimatePresence>
