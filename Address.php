@@ -13,13 +13,14 @@ class Address extends Model
         'user_id',
         'titulo',
         'cep',
-        'logradouro',
-        'numero',
+        'rua',         // Antes era logradouro
+        'num',         // Antes era numero
         'complemento',
+        'referencia',  // Adicionado para bater com o CRM
         'bairro',
         'cidade',
-        'estado',
-        'principal',
+        'uf',          // Antes era estado
+        'padrao',      // Antes era principal
     ];
 
     public function user()
