@@ -482,6 +482,10 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
   const [tempoRestanteSenha, setTempoRestanteSenha] = useState('');
   const [docSensivel, setDocSensivel] = useState({ cpf: '', nascimento: '', arquivo: null });
 
+  const [showAddEndereco, setShowAddEndereco] = useState(false);
+  const [enderecoFlow, setEnderecoFlow] = useState({
+      cep: '', rua: '', num: '', complemento: '', bairro: '', cidade: '', uf: '', referencia: '', padrao: false
+  });
   // Cronômetro para o botão de E-mail (Corrigido para descer exatos 1s)
   useEffect(() => {
       if (emailEditFlow.cooldown > 0) {
@@ -543,27 +547,24 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       }
   };
   // --- FUNÇÕES DE SEGURANÇA E AÇÕES ---
-  const avancarEmailStep2 = () => {
+    const avancarEmailStep2 = () => {
       if (!emailFlow.motivo.trim()) return alert("Obrigatório: Preencha o motivo da alteração.");
+      registrarLogAudit('Início da Troca de E-mail', 'Motivo informado pelo gestor: ' + emailFlow.motivo, 'info');
       setEmailFlow(prev => ({ ...prev, step: 2 }));
   };
 
-  const enviarCodigoEmail = () => {
-      if (emailEditFlow.lockedUntil && new Date() < emailEditFlow.lockedUntil) {
-          return alert("Sistema de segurança ativo. Aguarde 5 minutos para tentar novamente.");
-      }
-      if (!emailFlow.novoEmail.trim() || !emailFlow.novoEmail.includes('@')) {
-          return alert("Digite um e-mail válido.");
-      }
+    const enviarCodigoEmail = () => {
+      if (emailEditFlow.lockedUntil && new Date() < emailEditFlow.lockedUntil) return alert("Sistema de segurança ativo. Aguarde.");
+      if (!emailFlow.novoEmail.trim() || !emailFlow.novoEmail.includes('@')) return alert("Digite um e-mail válido.");
 
       const novasTentativas = emailEditFlow.attempts + 1;
       triggerAcao('envioEmailCode', 'Código enviado para o novo e-mail!');
-      registrarLog('Envio de Código de E-mail', `Tentativa ${novasTentativas}: Código enviado para ${emailFlow.novoEmail}. Motivo: ${emailFlow.motivo}`, 'info');
+      registrarLogAudit('Validação de Novo E-mail', `Código de confirmação enviado para ${emailFlow.novoEmail}.`, 'warning');
 
       if (novasTentativas >= 3) {
-          const tempoBloqueio = new Date(new Date().getTime() + 5 * 60000); // Bloqueia por 5 min
+          const tempoBloqueio = new Date(new Date().getTime() + 5 * 60000);
           setEmailEditFlow({ cooldown: 0, attempts: 0, lockedUntil: tempoBloqueio });
-          registrarLog('Alerta de Segurança: E-mail', `Bloqueio automático após 3 tentativas de envio para ${emailFlow.novoEmail}.`, 'warning');
+          registrarLogAudit('Alerta de Segurança', `Bloqueio automático após 3 tentativas de envio para ${emailFlow.novoEmail}.`, 'warning');
       } else {
           setEmailEditFlow(prev => ({ ...prev, cooldown: 45, attempts: novasTentativas }));
       }
@@ -585,17 +586,41 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       onError: (error) => alert('Erro: ' + (error.response?.data?.message || 'Falha ao atualizar telefone'))
   });
 
-  const salvarTelefone = () => {
+    const salvarTelefone = () => {
       if (!phoneFlow.motivo.trim()) return alert("Obrigatório: Preencha o motivo da alteração.");
       if (!phoneFlow.novoTelefone.trim()) return alert("Digite o novo telefone.");
 
       setSavingState('savePhone');
       mutacaoTelefone.mutate(
           { telefone: phoneFlow.novoTelefone, motivo: phoneFlow.motivo },
-          { onSettled: () => setSavingState(null) }
+          { onSettled: () => { 
+              setSavingState(null);
+              registrarLogAudit('Telefone Alterado', `Novo: ${phoneFlow.novoTelefone} | Motivo: ${phoneFlow.motivo}`, 'warning');
+          }}
       );
   };
+// 🟢 NOVA FUNÇÃO: Salvar Endereço Manualmente
+  const salvarNovoEndereco = () => {
+      if (!enderecoFlow.cep || !enderecoFlow.rua || !enderecoFlow.num) {
+          return alert("Obrigatório: Preencha pelo menos o CEP, Rua e Número.");
+      }
 
+      triggerAcao('saveAddress', 'Novo endereço adicionado com sucesso!');
+      
+      // Atualiza a tela em tempo real (Mock Visual)
+      const novoEndereco = { ...enderecoFlow, id: Date.now() };
+      setClienteSelecionado(prev => ({
+          ...prev,
+          enderecos: [novoEndereco, ...(prev.enderecos || [])]
+      }));
+
+      // Registra na Auditoria
+      registrarLogAudit('Novo Endereço Adicionado', `O gestor adicionou manualmente o endereço: ${enderecoFlow.rua}, ${enderecoFlow.num} - ${enderecoFlow.cidade}/${enderecoFlow.uf}.`, 'info');
+
+      // Limpa o formulário e fecha
+      setEnderecoFlow({ cep: '', rua: '', num: '', complemento: '', bairro: '', cidade: '', uf: '', referencia: '', padrao: false });
+      setShowAddEndereco(false);
+  };
   // 2. Atualizar Dados Sensíveis (Com upload de arquivo - FormData)
   const mutacaoDadosSensiveis = useMutation({
       mutationFn: async (formData) => await api.post(`/admin/customers/${clienteSelecionado.id}/sensitive-data`, formData, {
@@ -610,16 +635,18 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
       onError: (error) => alert('Erro: ' + (error.response?.data?.message || 'Falha no envio do documento'))
   });
 
-  const salvarDadosSensiveis = () => {
+    const salvarDadosSensiveis = () => {
       if (!docSensivel.arquivo) return alert("Obrigatório: Anexe o documento oficial para validar a alteração.");
-      
       setSavingState('saveDocs');
       const formData = new FormData();
       formData.append('arquivo', docSensivel.arquivo);
       if (docSensivel.cpf) formData.append('cpf', docSensivel.cpf);
       if (docSensivel.nascimento) formData.append('nascimento', docSensivel.nascimento);
 
-      mutacaoDadosSensiveis.mutate(formData, { onSettled: () => setSavingState(null) });
+      mutacaoDadosSensiveis.mutate(formData, { onSettled: () => {
+          setSavingState(null);
+          registrarLogAudit('Dados Sensíveis Atualizados', `Solicitação de alteração de CPF/Nascimento enviada com anexo (${docSensivel.arquivo.name}).`, 'warning');
+      }});
   };
 
   // 3. Gerar Senha Provisória
@@ -691,10 +718,80 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
   // States Globais de UI
   const [savingState, setSavingState] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '' });
-  // Helper para mostrar e esconder a notificação automaticamente
+// Helper para mostrar e esconder a notificação automaticamente (CORRIGIDO)
   const showToast = (message, status = 'success') => {
       setToast({ show: true, message, status });
-      setTimeout(() => setToast({ show: false, message: '', status: '' }), 3000);
+      setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+  };
+  const triggerAcao = (actionId, successMessage) => {
+    if (savingState) return;
+    setSavingState(actionId);
+    setTimeout(() => {
+      setSavingState(null);
+      if (successMessage) showToast(successMessage, 'success');
+    }, 1200); 
+  };
+  // 🟢 NOVA FUNÇÃO: Insere ações na Timeline de Auditoria em Tempo Real
+  const registrarLogAudit = (titulo, desc, tipo = 'info') => {
+      if (!clienteSelecionado) return;
+      const novoLog = { id: Date.now(), data: new Date().toISOString(), titulo, desc, tipo };
+      setClienteSelecionado(prev => ({ ...prev, auditLogs: [novoLog, ...(prev.auditLogs || [])] }));
+  };
+  // 🟢 NOVA FUNÇÃO: Exporta e Imprime a Timeline de Auditoria
+  const handleExportarPDF = () => {
+      triggerAcao('exportPdf', 'Relatório gerado para impressão!');
+      setTimeout(() => {
+          const janela = window.open('', '', 'width=900,height=700');
+          janela.document.write(`
+              <html>
+              <head>
+                  <title>Auditoria CRM - ${clienteSelecionado?.nome}</title>
+                  <style>
+                      body { font-family: 'Inter', Arial, sans-serif; padding: 40px; color: #334155; }
+                      h1 { color: #0f172a; margin-bottom: 5px; font-size: 24px; }
+                      .subtitle { color: #64748b; font-size: 14px; margin-bottom: 30px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;}
+                      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                      th, td { border: 1px solid #cbd5e1; padding: 14px; text-align: left; }
+                      th { background-color: #f8fafc; font-size: 12px; text-transform: uppercase; color: #475569; }
+                      td { font-size: 14px; color: #1e293b; }
+                      .tag { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+                      .tag-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+                      .tag-warning { background: #fef3c7; color: #854d0e; border: 1px solid #fde68a; }
+                      .tag-info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+                  </style>
+              </head>
+              <body>
+                  <h1>Relatório de Auditoria CRM</h1>
+                  <div class="subtitle">
+                      <p><strong>Cliente:</strong> ${clienteSelecionado?.nome} (CPF: ${clienteSelecionado?.cpf || 'Não informado'})</p>
+                      <p><strong>Período Filtrado:</strong> ${timelineDateRange.start ? formatDateBR(timelineDateRange.start) : 'Todo o período'} até ${timelineDateRange.end ? formatDateBR(timelineDateRange.end) : 'Hoje'}</p>
+                  </div>
+                  <table>
+                      <thead>
+                          <tr>
+                              <th width="150">Data / Hora</th>
+                              <th width="100">Status</th>
+                              <th>Ação Realizada</th>
+                              <th>Detalhes / Motivo</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          ${auditLogsFiltrados.map(log => `
+                              <tr>
+                                  <td>${formatDateTimeBR(log.data)}</td>
+                                  <td><span class="tag tag-${log.tipo || 'info'}">${log.tipo === 'success' ? 'SUCESSO' : log.tipo === 'warning' ? 'ALERTA' : 'INFO'}</span></td>
+                                  <td><strong>${log.titulo}</strong></td>
+                                  <td>${log.desc}</td>
+                              </tr>
+                          `).join('')}
+                      </tbody>
+                  </table>
+                  <script>window.onload = function() { window.print(); window.close(); }</script>
+              </body>
+              </html>
+          `);
+          janela.document.close();
+      }, 1500);
   };
   const [showRevenue, setShowRevenue] = useState(false);
   const [showMetricsHelp, setShowMetricsHelp] = useState(false);
@@ -765,16 +862,6 @@ const AdminCustomersContent = ({ mainTab, setMainTab }) => {
 
   const handleSearchChange = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
   const handleItemsPerPageChange = (e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); };
-
-  const triggerAcao = (actionId, successMessage) => {
-    if (savingState) return;
-    setSavingState(actionId);
-    setTimeout(() => {
-      setSavingState(null);
-      setToast({ show: true, message: successMessage, status: 'success' });
-      setTimeout(() => setToast({ show: false, message: '' }), 3000);
-    }, 1500); 
-  };
 
   const abrirPerfilCliente = (cliente) => {
       setClienteSelecionado(cliente);
@@ -1373,7 +1460,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
   };
 
 // ============================================================================
-  // RENDER MODULAR: PERFIL CRM (CUSTOMER 360 VIEW) - TEXTOS COMPACTOS & EDIÇÃO
+  // RENDER MODULAR: PERFIL CRM (CUSTOMER 360 VIEW) - UI REFINADA
   // ============================================================================
   const renderClientesCRMPerfil = () => (
     <FadeIn key="crm_perfil" className="space-y-6 flex flex-col h-full">
@@ -1386,14 +1473,12 @@ const ultimasComprasListFiltrada = useMemo(() => {
 
     <div className={`bg-white rounded-[24px] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[600px] flex-1 relative`}>  
         
-        {/* Fundo Dinâmico Feminino/Masculino */}
         <div className={`absolute top-0 left-0 w-full h-32 opacity-20 pointer-events-none ${clienteSelecionado?.sexo === 'Feminino' || clienteSelecionado?.sexo === 'F' ? 'bg-gradient-to-b from-pink-300 to-transparent' : 'bg-gradient-to-b from-sky-300 to-transparent'}`}></div>
         
-        {/* CABEÇALHO DO CLIENTE COM AVATAR REAL E BOTÃO DE ATUALIZAR */}
+        {/* CABEÇALHO DO CLIENTE */}
         <header className="p-8 border-b border-slate-200 bg-slate-50/50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 relative z-10 shrink-0">
             <div className="flex items-center gap-5">
                 <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-black text-3xl text-slate-700 shadow-sm overflow-hidden shrink-0">
-                    {/* AVATAR REAL */}
                     {clienteSelecionado?.avatar ? <img src={clienteSelecionado.avatar} className="w-full h-full object-cover" alt="Avatar"/> : getAvatarInitials(clienteSelecionado?.nome)}
                 </div>
                 <div>
@@ -1408,8 +1493,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
             </div>
             
             <div className="flex items-center gap-3">
-                {/* ÍCONE DE REFRESH DO CANTO DIREITO */}
-                <button onClick={() => refetchClients()} title="Forçar atualização dos dados deste cliente" className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all shadow-sm ${isFetchingClients ? 'animate-spin text-blue-500' : ''}`}>
+                <button onClick={() => refetchClients()} title="Forçar atualização dos dados" className={`w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all shadow-sm ${isFetchingClients ? 'animate-spin text-blue-500' : ''}`}>
                     <Icons.Refresh className="w-5 h-5"/>
                 </button>
 
@@ -1447,7 +1531,7 @@ const ultimasComprasListFiltrada = useMemo(() => {
             </div>
         </header>
 
-        {/* MENU DE NAVEGAÇÃO INTERNA (ATUALIZA API AO CLICAR) */}
+        {/* NAVEGAÇÃO DE ABAS */}
         <nav className="flex px-8 border-t border-slate-100 bg-slate-50/50 shrink-0 overflow-x-auto custom-scrollbar relative z-10" aria-label="Abas do Perfil">
           {['RESUMO', 'CARTEIRAS (LIVRO RAZÃO)', 'ENDEREÇOS','HISTÓRICO DE PEDIDOS','TIMELINE (AUDIT)'].map((tab) => (
             <button 
@@ -1464,11 +1548,10 @@ const ultimasComprasListFiltrada = useMemo(() => {
           ))}
         </nav>
       
-      {/* ÁREA DE CONTEÚDO COM SCROLL (BLINDAGEM FLEX) */}
       <div className="flex-1 min-h-0 overflow-y-auto bg-slate-50/30">
         <AnimatePresence mode="wait">
           
-          {/* ======================= ABA: RESUMO (LEITURA) ======================= */}
+          {/* ======================= ABA: RESUMO ======================= */}
           {crmSubTab === 'RESUMO' && !perfilEmEdicao && (
             <motion.section key="RESUMO_READ" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col lg:flex-row gap-6 p-6">
               
@@ -1483,7 +1566,6 @@ const ultimasComprasListFiltrada = useMemo(() => {
                       </div>
                       
                       <div className="space-y-4 text-xs font-medium text-slate-600 mb-6 border-b border-slate-100 pb-6 relative">
-                          {/* 🟢 SELO DE NÍVEL AJUSTADO (Mais abaixo, top-4 right-4) */}
                           {(() => {
                                const rankInfo = niveisVIPDaApi.find(n => safeStr(n.nome).toLowerCase() === safeStr(clienteSelecionado?.rank).toLowerCase());
                                       return (
@@ -1559,13 +1641,11 @@ const ultimasComprasListFiltrada = useMemo(() => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                  
-                      {/* 🟢 Trilha de Classificação CRM (COM SCROLL) */}
+                      {/* Trilha de Classificação */}
                       <article className="bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 shadow-sm rounded-2xl flex flex-col h-[320px] overflow-hidden">
                           <header className="p-5 border-b border-indigo-100/50 bg-white/50 shrink-0">
                               <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Icons.Trophy className="w-4 h-4 text-indigo-600"/> Trilha de Benefícios</h4>
                           </header>
-                          
                           <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 relative before:absolute before:inset-0 before:ml-7 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-indigo-300 before:via-slate-300 before:to-transparent">
                               <div className="relative flex items-start gap-3">
                                   <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-white bg-amber-500 shadow shrink-0 z-10 mt-1"></div>
@@ -1590,12 +1670,11 @@ const ultimasComprasListFiltrada = useMemo(() => {
                           </div>
                       </article>
 
-                      {/* 🟢 Alertas de Risco (COM PAGINAÇÃO DE 5 EM 5) */}
+                      {/* Alertas de Risco */}
                       <article className="bg-rose-50/30 border border-rose-100 shadow-sm rounded-3xl flex flex-col h-[320px] overflow-hidden">
                            <header className="p-5 border-b border-rose-100/50 bg-white/50 flex items-center justify-between shrink-0">
                               <h4 className="text-sm font-bold text-rose-800 flex items-center gap-2"><Icons.AlertTriangle className="w-4 h-4 text-rose-500"/> Alertas de Risco</h4>
                            </header>
-                           
                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-3">
                                <p className="text-[10px] text-slate-500 mb-2 leading-relaxed">O sistema detecta automaticamente padrões de fraude.</p>
                                {alertasPaginados?.map((alerta, i) => (
@@ -1615,7 +1694,6 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                    </div>
                                ))}
                            </div>
-
                            <footer className="p-3 border-t border-rose-100/50 bg-white/50 shrink-0 flex justify-between items-center text-[10px] font-bold text-slate-500">
                               <span>Pág {riscoPage} de {totalRiscoPages}</span>
                               <div className="flex gap-1.5">
@@ -1839,42 +1917,60 @@ const ultimasComprasListFiltrada = useMemo(() => {
 
           {/* ======================= ABA: ENDEREÇOS ======================= */}
           {crmSubTab === 'ENDEREÇOS' && (
-            <motion.section key="ENDEREÇOS" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-5xl mx-auto w-full p-6">
+            <motion.section key="ENDEREÇOS" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-5xl mx-auto w-full p-6 space-y-6">
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                   <div>
+                       <h3 className="text-lg font-black text-slate-800 flex items-center gap-2"><Icons.MapPin className="w-5 h-5 text-blue-500"/> Agenda de Endereços</h3>
+                       <p className="text-[11px] text-slate-500 mt-1 font-medium">Gerencie os locais de entrega salvos na conta do cliente.</p>
+                   </div>
+                   <button onClick={() => setShowAddEndereco(!showAddEndereco)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2 shrink-0">
+                       {showAddEndereco ? <><Icons.Close className="w-4 h-4" /> Cancelar Cadastro</> : <><Icons.Plus className="w-4 h-4" /> Novo Endereço</>}
+                   </button>
+               </div>
+
+               <AnimatePresence>
+                   {showAddEndereco && (
+                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                           <div className="bg-slate-50 border border-blue-200 p-6 rounded-3xl shadow-sm mb-6">
+                               <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><Icons.Edit3 className="w-4 h-4 text-blue-500"/> Cadastrar Novo Endereço</h4>
+                               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                   <div className="lg:col-span-1"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">CEP *</label><input type="text" value={enderecoFlow.cep} onChange={e => setEnderecoFlow({...enderecoFlow, cep: e.target.value})} placeholder="00000-000" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                                   <div className="lg:col-span-2"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Logradouro / Rua *</label><input type="text" value={enderecoFlow.rua} onChange={e => setEnderecoFlow({...enderecoFlow, rua: e.target.value})} placeholder="Av. Paulista" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                                   <div className="lg:col-span-1"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Número *</label><input type="text" value={enderecoFlow.num} onChange={e => setEnderecoFlow({...enderecoFlow, num: e.target.value})} placeholder="1000" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                                   <div className="lg:col-span-2"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Complemento</label><input type="text" value={enderecoFlow.complemento} onChange={e => setEnderecoFlow({...enderecoFlow, complemento: e.target.value})} placeholder="Apto 45, Bloco B..." className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                                   <div className="lg:col-span-2"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Bairro</label><input type="text" value={enderecoFlow.bairro} onChange={e => setEnderecoFlow({...enderecoFlow, bairro: e.target.value})} placeholder="Bela Vista" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                                   <div className="lg:col-span-2"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Cidade</label><input type="text" value={enderecoFlow.cidade} onChange={e => setEnderecoFlow({...enderecoFlow, cidade: e.target.value})} placeholder="São Paulo" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20" /></div>
+                                   <div className="lg:col-span-1"><label className="text-[10px] uppercase font-bold text-slate-400 block mb-1.5">Estado (UF)</label><input type="text" value={enderecoFlow.uf} onChange={e => setEnderecoFlow({...enderecoFlow, uf: e.target.value})} placeholder="SP" maxLength="2" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 uppercase" /></div>
+                                   <div className="lg:col-span-1 flex items-end"><label className="flex items-center gap-2 cursor-pointer pb-2"><input type="checkbox" checked={enderecoFlow.padrao} onChange={e => setEnderecoFlow({...enderecoFlow, padrao: e.target.checked})} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500" /><span className="text-xs font-bold text-slate-700">Tornar Padrão</span></label></div>
+                               </div>
+                               <div className="mt-5 pt-5 border-t border-slate-200/60 flex justify-end gap-3">
+                                   <button onClick={() => setShowAddEndereco(false)} className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-colors">Cancelar</button>
+                                   <ProgressButton onClick={salvarNovoEndereco} loading={savingState === 'saveAddress'} text="Salvar Endereço" loadingText="Salvando..." className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs shadow-sm transition-colors" />
+                               </div>
+                           </div>
+                       </motion.div>
+                   )}
+               </AnimatePresence>
+
                {(!clienteSelecionado?.enderecos || clienteSelecionado.enderecos.length === 0) ? (
                   <div className="bg-white p-16 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-center">
-                      <p className="text-sm font-bold text-slate-500">Nenhum endereço cadastrado na conta deste cliente.</p>
+                      <p className="text-sm font-bold text-slate-500">Nenhum endereço salvo na agenda deste cliente.</p>
                   </div>
                ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {clienteSelecionado.enderecos.map((end, idx) => (
                           <article key={idx} className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden group hover:border-blue-300 transition-colors">
                               <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500 absolute top-0 left-0"></div>
-                              
                               <div className="p-6 relative">
                                   {end.padrao && <span className="absolute top-5 right-5 bg-blue-50 text-blue-600 border border-blue-100 text-[9px] px-2 py-1 rounded-md font-black uppercase shadow-sm">Entrega Padrão</span>}
-                                  
                                   <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-sm"><Icons.MapPin className="w-5 h-5"/></div>
-                                  
                                   <h5 className="text-sm font-black text-slate-800 mb-1 leading-tight">{safeStr(end.rua)}, {safeStr(end.num)}</h5>
                                   <p className="text-[11px] font-medium text-slate-500 mb-4">{safeStr(end.bairro)}</p>
-
                                   <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-                                      <div>
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cidade / Estado</p>
-                                          <p className="text-[11px] font-bold text-slate-700">{safeStr(end.cidade)} - {safeStr(end.uf)}</p>
-                                      </div>
-                                      <div>
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">CEP</p>
-                                          <p className="text-[11px] font-mono font-bold text-slate-700">{safeStr(end.cep)}</p>
-                                      </div>
-                                      <div className="col-span-2">
-                                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Complemento / Ref.</p>
-                                          <p className="text-[11px] font-medium text-slate-600">{safeStr(end.complemento)} {end.referencia && `- ${end.referencia}`}</p>
-                                      </div>
+                                      <div><p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cidade / Estado</p><p className="text-[11px] font-bold text-slate-700">{safeStr(end.cidade)} - {safeStr(end.uf)}</p></div>
+                                      <div><p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">CEP</p><p className="text-[11px] font-mono font-bold text-slate-700">{safeStr(end.cep)}</p></div>
+                                      <div className="col-span-2"><p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Complemento / Ref.</p><p className="text-[11px] font-medium text-slate-600">{safeStr(end.complemento)} {end.referencia && `- ${end.referencia}`}</p></div>
                                   </div>
-                              </div>
-                              <div className="bg-slate-50 px-6 py-2.5 border-t border-slate-100 mt-auto flex justify-end">
-                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Registrado no CRM</span>
                               </div>
                           </article>
                       ))}
@@ -1887,42 +1983,33 @@ const ultimasComprasListFiltrada = useMemo(() => {
           {crmSubTab === 'HISTÓRICO DE PEDIDOS' && (
             <motion.section key="HISTORICO" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto w-full flex flex-col space-y-6 p-6">
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col flex-1 h-full min-h-[600px] overflow-hidden">
-                    
-                    <header className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 shrink-0">
+                    <header className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100 shrink-0">
                         <div>
-                            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2"><Icons.Package className="w-5 h-5 text-blue-500"/> Histórico de Pedidos</h3>
-                            <p className="text-[11px] text-slate-500 mt-1 font-medium">Visão detalhada de compras, personalizações e envios.</p>
+                            <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Package className="w-6 h-6 text-blue-500"/> Histórico de Pedidos</h3>
+                            <p className="text-sm text-slate-500 mt-1 font-medium">Visão detalhada de compras, personalizações e envios.</p>
                         </div>
-                        
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-                            <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+                            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                 {['TODOS', 'CONCLUÍDOS', 'REEMBOLSADOS', 'CANCELADOS'].map(tab => (
                                     <button 
                                       key={tab} 
                                       onClick={() => { setOrderHistoryTab(tab); setOrderHistoryPage(1); }} 
-                                      className={`px-3.5 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full transition-all border shadow-sm ${orderHistoryTab === tab ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
+                                      className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-full transition-all border shadow-sm ${orderHistoryTab === tab ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}`}
                                     >
                                         {tab}
                                     </button>
                                 ))}
                             </div>
-                            
                             <div className="relative z-50 shrink-0">
-                                <HoverProgressRoundButton 
-                                    text={(orderHistoryDateRange.start || orderHistoryDateRange.end) ? 'Filtrado' : 'Período'} 
-                                    onClick={() => setOrderHistoryDateOpen(!orderHistoryDateOpen)} 
-                                    icon={Icons.Calendar} ariaLabel="Filtrar Período Histórico" loading={savingState === 'filtroHist'} 
-                                />
+                                <HoverProgressRoundButton text={(orderHistoryDateRange.start || orderHistoryDateRange.end) ? 'Filtrado' : 'Período'} onClick={() => setOrderHistoryDateOpen(!orderHistoryDateOpen)} icon={Icons.Calendar} ariaLabel="Filtrar Período Histórico" loading={savingState === 'filtroHist'} />
                                 <AnimatePresence>
                                     {orderHistoryDateOpen && (
-                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 top-14 bg-white border border-slate-200 shadow-xl rounded-2xl p-4 z-50 w-60">
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Data Início</label>
-                                            <input type="date" value={orderHistoryDateRange.start} onChange={e => setOrderHistoryDateRange({...orderHistoryDateRange, start: e.target.value})} className="w-full text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none mb-3 focus:ring-2 focus:ring-blue-500/20" />
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Data Fim</label>
-                                            <input type="date" value={orderHistoryDateRange.end} onChange={e => setOrderHistoryDateRange({...orderHistoryDateRange, end: e.target.value})} className="w-full text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
+                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 top-14 bg-white border border-slate-200 shadow-xl rounded-2xl p-5 z-50 w-64">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Início</label><input type="date" value={orderHistoryDateRange.start} onChange={e => setOrderHistoryDateRange({...orderHistoryDateRange, start: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Fim</label><input type="date" value={orderHistoryDateRange.end} onChange={e => setOrderHistoryDateRange({...orderHistoryDateRange, end: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-5 focus:ring-2 focus:ring-blue-500/20" />
                                             <div className="flex gap-2">
-                                                <button onClick={() => {setOrderHistoryDateRange({start:'', end:''}); setOrderHistoryDateOpen(false); setOrderHistoryPage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-md py-2 transition-colors">Limpar</button>
-                                                <button onClick={() => { triggerAcao('filtroHist', 'Histórico Filtrado!'); setOrderHistoryDateOpen(false); setOrderHistoryPage(1); }} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-md py-2 transition-colors shadow-sm">Aplicar</button>
+                                                <button onClick={() => {setOrderHistoryDateRange({start:'', end:''}); setOrderHistoryDateOpen(false); setOrderHistoryPage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg py-2.5 transition-colors">Limpar</button>
+                                                <button onClick={() => { triggerAcao('filtroHist', 'Histórico Filtrado!'); setOrderHistoryDateOpen(false); setOrderHistoryPage(1); }} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-lg py-2.5 transition-colors shadow-sm">Aplicar</button>
                                             </div>
                                         </motion.div>
                                     )}
@@ -1931,120 +2018,113 @@ const ultimasComprasListFiltrada = useMemo(() => {
                         </div>
                     </header>
                     
-                    {/* LISTA DE PEDIDOS EM SANFONA */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-6">
                         {orderHistoryPaginados.length > 0 ? orderHistoryPaginados.map(pedido => {
                             const dataEnvio = pedido.history?.find(h => safeStr(h.evento).toLowerCase().includes('despachado'))?.data || 'Aguardando';
                             const dataEntrega = pedido.history?.find(h => safeStr(h.evento).toLowerCase().includes('entregue'))?.data || 'Aguardando';
                             const isPedidoExpandido = pedidoExpandido === pedido.id;
+                            const statusColor = pedido.status === 'CANCELADO' ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100' : pedido.status === 'REEMBOLSADO' ? 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
 
                             return (
                             <div key={pedido.id} className="border border-slate-200 rounded-2xl bg-white shadow-sm overflow-hidden transition-all duration-300">
-                                
-                                {/* CABEÇALHO DO PEDIDO */}
-                                <button 
-                                    type="button"
-                                    onClick={() => setPedidoExpandido(isPedidoExpandido ? null : pedido.id)}
-                                    className={`w-full text-left p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors ${isPedidoExpandido ? 'bg-slate-50/80 border-b border-slate-100' : 'bg-white hover:bg-slate-50/50'}`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-sm border transition-colors ${isPedidoExpandido ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-slate-200'}`}>
-                                            <Icons.Package className="w-5 h-5" />
-                                        </div>
+                                <button type="button" onClick={() => setPedidoExpandido(isPedidoExpandido ? null : pedido.id)} className={`w-full text-left p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors ${isPedidoExpandido ? 'bg-slate-50/80 border-b border-slate-100' : 'bg-white hover:bg-slate-50/50'}`}>
+                                    <div className="flex items-center gap-5">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black shadow-sm border transition-colors ${isPedidoExpandido ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-slate-200'}`}><Icons.Package className="w-6 h-6" /></div>
                                         <div>
-                                            <h4 className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">Pedido #{pedido.id}</h4>
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Realizado em {formatDateBR(pedido.data_raw || pedido.data)}</span>
+                                            <h4 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">Pedido #{pedido.id}</h4>
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Realizado em {formatDateBR(pedido.data_raw || pedido.data)}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <span className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md border shadow-sm ${pedido.status === 'CANCELADO' ? 'bg-rose-50 text-rose-700 border-rose-200' : pedido.status === 'REEMBOLSADO' ? 'bg-slate-100 text-slate-600 border-slate-300' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                                            {pedido.status}
-                                        </span>
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 border border-slate-200 text-slate-400 transition-transform ${isPedidoExpandido ? 'rotate-90' : ''}`}>
-                                            <Icons.ChevronRight className="w-4 h-4" />
-                                        </div>
+                                        <span className={`px-5 py-2 text-xs font-black uppercase tracking-widest rounded-lg border shadow-sm transition-colors cursor-pointer ${statusColor}`}>{pedido.status}</span>
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-slate-50 border border-slate-200 text-slate-400 transition-transform ${isPedidoExpandido ? 'rotate-90' : ''}`}><Icons.ChevronRight className="w-5 h-5" /></div>
                                     </div>
                                 </button>
                                 
-                                {/* CORPO DO CARD DE PEDIDO EXPANDIDO */}
                                 <AnimatePresence>
                                 {isPedidoExpandido && (
                                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                  <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                  <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
                                       
-                                      {/* COLUNA 1: PRODUTOS */}
-                                      <div className="space-y-4">
-                                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Icons.Box className="w-4 h-4" /> Itens Adquiridos ({pedido.itens?.length || 0})</p>                          
-                                            <div className="space-y-3">
+                                      <div className="space-y-5">
+                                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Icons.Box className="w-5 h-5" /> Itens Adquiridos ({pedido.itens?.length || 0})</p>                          
+                                            <div className="space-y-4">
                                                 {pedido.itens && pedido.itens.length > 0 ? pedido.itens.map((produto, idx) => {
                                                     const uniqueId = `${pedido.id}-${produto.id || idx}`;
                                                     const isProdExpandido = produtoExpandido === uniqueId;
-                                                    
                                                     const qtd = safeNum(produto.quantidade) || safeNum(produto.pivot?.quantidade) || 1;
                                                     const precoBase = safeNum(produto.preco);
                                                     const descontoItem = safeNum(produto.desconto) || safeNum(produto.pivot?.desconto) || 0;
                                                     const subtotalItem = (precoBase - descontoItem) * qtd;
+                                                    
+                                                    // Transforma as personalizações e variações que vieram do BD em Array seguro para .map
+                                                    const varArray = Array.isArray(produto.variacoes) ? produto.variacoes : (produto.variation_name ? produto.variation_name.split('|').map(v => ({nome: v.split(':')[0]?.trim(), valor: v.split(':')[1]?.trim()})) : []);
+                                                    const persObject = produto.personalizacoes || produto.customization;
+                                                    const persArray = Array.isArray(persObject) ? persObject : Object.entries(persObject || {}).map(([key, value]) => ({ label: key, valor: value, tipo: (key === 'imagem' || key.toLowerCase().includes('foto') || value.includes('http')) ? 'imagem' : 'texto' }));
 
                                                     return (
                                                     <div key={uniqueId} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm transition-all">
-                                                        <div 
-                                                            onClick={() => setProdutoExpandido(isProdExpandido ? null : uniqueId)} 
-                                                            className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                {produto.imagem ? (
-                                                                    <img src={produto.imagem} className="w-10 h-10 rounded-lg object-cover border border-slate-100" alt={produto.nome} />
-                                                                ) : (
-                                                                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400"><Icons.Box className="w-4 h-4"/></div>
-                                                                )}
+                                                        <div onClick={() => setProdutoExpandido(isProdExpandido ? null : uniqueId)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors">
+                                                            <div className="flex items-center gap-4">
+                                                                {produto.imagem ? <img src={produto.imagem} className="w-12 h-12 rounded-lg object-cover border border-slate-100" alt={produto.nome} /> : <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400"><Icons.Box className="w-5 h-5"/></div>}
                                                                 <div>
-                                                                    <p className="text-xs font-bold text-slate-800 line-clamp-1">{produto.nome}</p>
-                                                                    <p className="text-[10px] text-slate-500 font-medium mt-0.5">Qtd: <strong className="text-slate-700">{qtd} un.</strong> • Clique para detalhes</p>
+                                                                    <p className="text-sm font-bold text-slate-800 line-clamp-1">{produto.nome}</p>
+                                                                    <p className="text-xs text-slate-500 font-medium mt-1">Qtd: <strong className="text-slate-700">{qtd} un.</strong> • Clique para detalhes</p>
                                                                 </div>
                                                             </div>
-                                                            <Icons.ChevronRight className={`w-4 h-4 text-slate-400 transition-transform ${isProdExpandido ? 'rotate-90' : ''}`} />
+                                                            <Icons.ChevronRight className={`w-5 h-5 text-slate-400 transition-transform ${isProdExpandido ? 'rotate-90' : ''}`} />
                                                         </div>
 
                                                         <AnimatePresence>
                                                             {isProdExpandido && (
                                                                 <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden bg-slate-50 border-t border-slate-100">
-                                                                    <div className="p-4 space-y-4">
-                                                                        
-                                                                        {/* Preços */}
-                                                                        <div className="grid grid-cols-2 gap-3 text-[11px]">
+                                                                    <div className="p-5 space-y-6">
+                                                                        <div className="flex justify-between items-center text-sm pb-4 border-b border-slate-200/70">
                                                                             <div>
-                                                                                <span className="block text-slate-400 font-bold mb-1 uppercase text-[9px] tracking-wider">Preço Base (Unit.)</span>
-                                                                                <span className="font-bold text-slate-700">{formatCurrency(precoBase)}</span>
+                                                                                <span className="block text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">Preço Base Unitário</span>
+                                                                                <span className="font-bold text-slate-700 text-base">{formatCurrency(precoBase)}</span>
                                                                             </div>
-                                                                            <div>
-                                                                                <span className="block text-slate-400 font-bold mb-1 uppercase text-[9px] tracking-wider" title="Desconto dado numa única unidade">Desc. Aplicado (Unit)</span>
-                                                                                <span className="font-bold text-emerald-600">{descontoItem > 0 ? formatCurrency(descontoItem) : 'Nenhum'}</span>
-                                                                            </div>
-                                                                            <div className="col-span-2 pt-2 border-t border-slate-200/70 flex justify-between items-center">
-                                                                                <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Subtotal deste Item</span>
-                                                                                <span className="font-black text-blue-600 text-sm">{formatCurrency(subtotalItem)}</span>
+                                                                            <div className="text-right">
+                                                                                <span className="block text-slate-400 font-bold mb-1.5 uppercase text-[10px] tracking-wider">Subtotal Item ({qtd}x)</span>
+                                                                                <span className="font-black text-blue-600 text-lg">{formatCurrency(subtotalItem)}</span>
                                                                             </div>
                                                                         </div>
 
-                                                                        {/* Personalizações */}
-                                                                        {produto.personalizacoes && produto.personalizacoes.length > 0 && (
-                                                                            <div className="pt-2">
-                                                                                <span className="block text-slate-400 font-bold mb-2 uppercase text-[9px] tracking-wider">Personalizações do Cliente</span>
-                                                                                <div className="space-y-2">
-                                                                                    {produto.personalizacoes.map((pers, pIdx) => (
-                                                                                        <div key={pIdx} className="bg-white border border-slate-200 p-3 rounded-lg shadow-sm flex items-center gap-3">
+                                                                        {varArray && varArray.length > 0 && (
+                                                                            <div>
+                                                                                <span className="block text-slate-400 font-bold mb-2 uppercase text-[10px] tracking-wider">Variações Escolhidas</span>
+                                                                                <div className="flex flex-wrap gap-2">
+                                                                                    {varArray.map((v, vIdx) => (
+                                                                                        <span key={vIdx} className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-slate-700 text-xs font-bold shadow-sm">{v.nome}: <span className="text-slate-500 font-medium ml-1">{v.valor}</span></span>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {persArray && persArray.length > 0 && (
+                                                                            <div>
+                                                                                <span className="block text-slate-400 font-bold mb-3 uppercase text-[10px] tracking-wider">Personalizações do Cliente</span>
+                                                                                <div className="space-y-3">
+                                                                                    {persArray.map((pers, pIdx) => (
+                                                                                        <div key={pIdx} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm flex items-center gap-4">
                                                                                             {pers.tipo === 'imagem' ? (
                                                                                                 <>
-                                                                                                    <img src={pers.valor} alt={pers.label} className="w-10 h-10 rounded-md object-cover border border-slate-100 shadow-sm" />
-                                                                                                    <div>
-                                                                                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{pers.label || 'Imagem Enviada'}</p>
-                                                                                                        <a href={pers.valor} target="_blank" rel="noreferrer" className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">Visualizar</a>
+                                                                                                    <img src={pers.valor} alt={pers.label} className="w-16 h-16 rounded-lg object-cover border border-slate-100 shadow-sm" />
+                                                                                                    <div className="flex-1">
+                                                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1.5">{pers.label}</p>
+                                                                                                        <div className="flex gap-2">
+                                                                                                            <a href={pers.valor} target="_blank" rel="noreferrer" className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 w-max"><Icons.Eye className="w-3.5 h-3.5"/> Ver Imagem</a>
+                                                                                                            <a href={pers.valor} download target="_blank" rel="noreferrer" className="bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 w-max"><Icons.Download className="w-3.5 h-3.5"/> Baixar</a>
+                                                                                                        </div>
                                                                                                     </div>
                                                                                                 </>
                                                                                             ) : (
-                                                                                                <div>
-                                                                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">{pers.label || 'Texto Informado'}</p>
-                                                                                                    <p className="text-xs font-black text-slate-800 break-words leading-relaxed">"{pers.valor}"</p>
+                                                                                                <div className="w-full">
+                                                                                                    <div className="flex justify-between items-center mb-1">
+                                                                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{pers.label}</p>
+                                                                                                        <button onClick={() => {navigator.clipboard.writeText(pers.valor); showToast('Texto copiado!');}} className="text-[10px] text-blue-600 font-bold hover:text-blue-800 transition-colors uppercase">Copiar Texto</button>
+                                                                                                    </div>
+                                                                                                    <p className="text-sm font-black text-slate-800 break-words leading-relaxed bg-slate-50 border border-slate-100 p-3 rounded-lg w-full">"{pers.valor}"</p>
                                                                                                 </div>
                                                                                             )}
                                                                                         </div>
@@ -2058,69 +2138,63 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                                         </AnimatePresence>
                                                     </div>
                                                 )}) : (
-                                                    <p className="text-[11px] text-slate-500 italic">Nenhum item listado.</p>
+                                                    <p className="text-sm text-slate-500 italic">Nenhum item listado.</p>
                                                 )}
                                             </div>
                                       </div>
 
-                                      {/* COLUNA 2: LOGÍSTICA E ENDEREÇO SEPARADO */}
-                                      <div className="space-y-6 lg:border-l border-slate-100 lg:pl-6">
+                                      <div className="space-y-6 lg:border-l border-slate-100 lg:pl-8">
                                           <div>
-                                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-3"><Icons.MapPin className="w-4 h-4"/> Entrega e Prazos</p>
-                                              <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-3 space-y-2 text-[10px] text-slate-600 font-medium">
-                                                  <div className="flex justify-between items-center"><span className="text-slate-400 uppercase tracking-wider font-bold">Despacho:</span> <strong className="text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{dataEnvio}</strong></div>
-                                                  <div className="flex justify-between items-center"><span className="text-slate-400 uppercase tracking-wider font-bold">Entrega Final:</span> <strong className="text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{dataEntrega}</strong></div>
+                                              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><Icons.MapPin className="w-5 h-5"/> Entrega e Prazos</p>
+                                              <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4 text-xs text-slate-600 font-medium">
+                                                  <div className="flex justify-between items-center"><span className="text-slate-400 uppercase tracking-wider font-bold">Despacho:</span> <strong className="text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded shadow-sm text-sm">{dataEnvio}</strong></div>
+                                                  <div className="flex justify-between items-center"><span className="text-slate-400 uppercase tracking-wider font-bold">Entrega Final:</span> <strong className="text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded shadow-sm text-sm">{dataEntrega}</strong></div>
                                               </div>
                                           </div>
 
                                           <div>
-                                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Endereço de Destino</p>
+                                              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Endereço de Destino</p>
                                               {pedido.endereco && pedido.endereco.logradouro ? (
-                                                  <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4 text-[11px] text-slate-600 font-medium space-y-1.5">
+                                                  <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 text-sm text-slate-600 font-medium space-y-2">
                                                       <p><span className="font-bold text-slate-800">Logradouro:</span> {pedido.endereco.logradouro}</p>
                                                       <p><span className="font-bold text-slate-800">Número:</span> {pedido.endereco.numero}</p>
                                                       {pedido.endereco.complemento && <p><span className="font-bold text-slate-800">Complemento:</span> {pedido.endereco.complemento}</p>}
                                                       <p><span className="font-bold text-slate-800">Bairro:</span> {pedido.endereco.bairro}</p>
                                                       <p><span className="font-bold text-slate-800">Cidade/UF:</span> {pedido.endereco.cidade} / {pedido.endereco.uf}</p>
-                                                      <p><span className="font-bold text-slate-800">CEP:</span> <span className="font-mono">{pedido.endereco.cep}</span></p>
+                                                      <p className="pt-2"><span className="font-bold text-slate-800 bg-slate-200/50 px-2 py-1 rounded">CEP: <span className="font-mono">{pedido.endereco.cep}</span></span></p>
                                                   </div>
                                               ) : (
-                                                  <p className="text-[11px] font-medium text-slate-400 bg-slate-50 rounded-lg p-3 border border-slate-100">Endereço não registrado.</p>
+                                                  <p className="text-sm font-medium text-slate-400 bg-slate-50 rounded-xl p-4 border border-slate-100">Endereço não registrado.</p>
                                               )}
                                           </div>
                                       </div>
 
-                                      {/* COLUNA 3: FINANCEIRO */}
-                                      <div className="space-y-4 lg:border-l border-slate-100 lg:pl-6 flex flex-col justify-between">
+                                      <div className="space-y-6 lg:border-l border-slate-100 lg:pl-8 flex flex-col justify-between">
                                           <div>
-                                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mb-3"><Icons.CreditCard className="w-4 h-4"/> Resumo Financeiro</p>
-                                              
-                                              {/* Cupons Box */}
-                                              <div className="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4 mb-4">
-                                                  <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mb-2">Cupons no Carrinho</p>
-                                                  <div className="space-y-2">
+                                              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><Icons.CreditCard className="w-5 h-5"/> Resumo Financeiro</p>
+                                              <div className="bg-emerald-50/40 border border-emerald-100 rounded-2xl p-5 mb-5">
+                                                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-3">Cupons no Carrinho</p>
+                                                  <div className="space-y-3">
                                                       {pedido.cupons && pedido.cupons.length > 0 ? pedido.cupons.map((cupom, idx) => (
-                                                          <div key={idx} className="flex flex-col gap-1">
-                                                              <div className="flex justify-between items-center text-[10px]">
-                                                                  <span className="font-black text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-sm">{cupom.nome}</span>
-                                                                  <span className="font-bold text-emerald-600 text-[11px]">- {formatCurrency(cupom.valor)}</span>
+                                                          <div key={idx} className="flex flex-col gap-1.5">
+                                                              <div className="flex justify-between items-center text-xs">
+                                                                  <span className="font-black text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded shadow-sm">{cupom.nome}</span>
+                                                                  <span className="font-bold text-emerald-600 text-sm">- {formatCurrency(cupom.valor)}</span>
                                                               </div>
-                                                              <span className="text-[9px] text-slate-400 font-bold ml-1">Ref: {cupom.tipo}</span>
+                                                              <span className="text-[10px] text-slate-500 font-bold ml-1">Ref: {cupom.tipo}</span>
                                                           </div>
-                                                      )) : <span className="text-[10px] text-slate-500 font-medium">Nenhum cupom extra.</span>}
+                                                      )) : <span className="text-xs text-slate-500 font-medium">Nenhum cupom extra aplicado.</span>}
                                                   </div>
                                               </div>
-
-                                              <div className="space-y-3 text-[11px] font-medium text-slate-600 bg-slate-50/50 border border-slate-100 rounded-xl p-4">
-                                                  <div className="flex justify-between items-center"><span>Soma dos Produtos:</span><strong className="text-slate-800">{formatCurrency(pedido.subtotal)}</strong></div>
-                                                  <div className="flex justify-between items-center"><span>Frete Total:</span><strong className="text-slate-800">{formatCurrency(pedido.frete)}</strong></div>
-                                                  <div className="flex justify-between items-center text-emerald-600 pt-2 border-t border-slate-200/50"><span>Total de Descontos:</span><strong>-{formatCurrency(pedido.desconto)}</strong></div>
+                                              <div className="space-y-4 text-sm font-medium text-slate-600 bg-slate-50/50 border border-slate-100 rounded-2xl p-5">
+                                                  <div className="flex justify-between items-center"><span>Soma dos Produtos:</span><strong className="text-slate-800 text-base">{formatCurrency(pedido.subtotal)}</strong></div>
+                                                  <div className="flex justify-between items-center"><span>Frete Total:</span><strong className="text-slate-800 text-base">{formatCurrency(pedido.frete)}</strong></div>
+                                                  <div className="flex justify-between items-center text-emerald-600 pt-3 border-t border-slate-200/50"><span>Total de Descontos:</span><strong className="text-base">-{formatCurrency(pedido.desconto)}</strong></div>
                                               </div>
                                           </div>
-
-                                          <div className="bg-slate-800 rounded-xl p-4 shadow-sm text-white flex justify-between items-center mt-4">
-                                              <span className="font-bold text-slate-300 uppercase tracking-widest text-[10px]">Total Pago</span>
-                                              <strong className="text-xl font-black">{formatCurrency(pedido.total)}</strong>
+                                          <div className="bg-slate-800 rounded-2xl p-6 shadow-sm text-white flex justify-between items-center mt-6">
+                                              <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">Total Pago</span>
+                                              <strong className="text-3xl font-black">{formatCurrency(pedido.total)}</strong>
                                           </div>
                                       </div>
                                   </div>
@@ -2130,19 +2204,19 @@ const ultimasComprasListFiltrada = useMemo(() => {
                             </div>
                             )
                         }) : (
-                            <div className="py-10 flex flex-col items-center justify-center text-center bg-slate-50 border border-slate-200 rounded-xl">
-                                <Icons.Package className="w-8 h-8 text-slate-300 mb-2" />
-                                <p className="text-sm text-slate-500 font-bold">Nenhum pedido encontrado nesta página.</p>
+                            <div className="py-12 flex flex-col items-center justify-center text-center bg-slate-50 border border-slate-200 rounded-2xl">
+                                <Icons.Package className="w-10 h-10 text-slate-300 mb-3" />
+                                <p className="text-base text-slate-500 font-bold">Nenhum pedido encontrado nesta página.</p>
                             </div>
                         )}
                     </div>
 
                     {historicoPedidosFiltrado.length > orderHistoryPerPage && (
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center text-xs font-bold text-slate-500 shrink-0">
+                        <div className="p-6 md:p-8 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center text-sm font-bold text-slate-500 shrink-0">
                             <span>Mostrando Página {orderHistoryPage} de {totalOrderHistoryPages}</span>
                             <div className="flex gap-2">
-                                <button type="button" onClick={() => setOrderHistoryPage(p => Math.max(1, p - 1))} disabled={orderHistoryPage === 1} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-4 h-4"/></button>
-                                <button type="button" onClick={() => setOrderHistoryPage(p => Math.min(totalOrderHistoryPages, p + 1))} disabled={orderHistoryPage === totalOrderHistoryPages} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-4 h-4"/></button>
+                                <button type="button" onClick={() => setOrderHistoryPage(p => Math.max(1, p - 1))} disabled={orderHistoryPage === 1} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-5 h-5"/></button>
+                                <button type="button" onClick={() => setOrderHistoryPage(p => Math.min(totalOrderHistoryPages, p + 1))} disabled={orderHistoryPage === totalOrderHistoryPages} className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-5 h-5"/></button>
                             </div>
                         </div>
                     )}
@@ -2154,10 +2228,10 @@ const ultimasComprasListFiltrada = useMemo(() => {
           {crmSubTab === 'TIMELINE (AUDIT)' && (
             <motion.section key="TIMELINE" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-4xl mx-auto w-full flex flex-col space-y-6 p-6">
                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col flex-1 h-full min-h-[600px] overflow-hidden">
-                   <header className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
+                   <header className="p-6 sm:p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                        <div>
-                           <h3 className="text-base font-bold text-slate-800 flex items-center gap-2"><Icons.Activity className="w-5 h-5 text-blue-500"/> Registro de Auditoria</h3>
-                           <p className="text-[11px] text-slate-500 mt-1 font-medium">Histórico imutável de ações, transações e segurança desta conta.</p>
+                           <h3 className="text-xl font-black text-slate-800 flex items-center gap-3"><Icons.Activity className="w-6 h-6 text-blue-500"/> Registro de Auditoria (Logs)</h3>
+                           <p className="text-xs text-slate-500 mt-1 font-medium">Histórico imutável de ações, transações e segurança desta conta.</p>
                        </div>
                        
                        <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -2172,15 +2246,15 @@ const ultimasComprasListFiltrada = useMemo(() => {
                                <AnimatePresence>
                                     {timelineDateOpen && (
                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="absolute right-0 top-14 bg-white border border-slate-200 shadow-xl rounded-2xl p-5 z-50 w-64">
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Início</label>
-                                            <input type="date" value={timelineDateRange.start} onChange={e => setTimelineDateRange({...timelineDateRange, start: e.target.value})} className="w-full text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Início</label>
+                                            <input type="date" value={timelineDateRange.start} onChange={e => setTimelineDateRange({...timelineDateRange, start: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-4 focus:ring-2 focus:ring-blue-500/20" />
                                             
-                                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Fim</label>
-                                            <input type="date" value={timelineDateRange.end} onChange={e => setTimelineDateRange({...timelineDateRange, end: e.target.value})} className="w-full text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 outline-none mb-5 focus:ring-2 focus:ring-blue-500/20" />
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">Data Fim</label>
+                                            <input type="date" value={timelineDateRange.end} onChange={e => setTimelineDateRange({...timelineDateRange, end: e.target.value})} className="w-full text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 outline-none mb-5 focus:ring-2 focus:ring-blue-500/20" />
                                             
                                             <div className="flex gap-2">
-                                                <button onClick={() => {setTimelineDateRange({start:'', end:''}); setTimelineDateOpen(false); setTimelinePage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg py-2 transition-colors">Limpar</button>
-                                                <button onClick={aplicarFiltroTimeline} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-lg py-2 transition-colors shadow-sm">Aplicar</button>
+                                                <button onClick={() => {setTimelineDateRange({start:'', end:''}); setTimelineDateOpen(false); setTimelinePage(1);}} className="w-1/3 text-center text-[10px] text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg py-2.5 transition-colors">Limpar</button>
+                                                <button onClick={aplicarFiltroTimeline} className="w-2/3 text-center text-[10px] text-white font-bold bg-blue-600 hover:bg-blue-700 rounded-lg py-2.5 transition-colors shadow-sm">Aplicar</button>
                                             </div>
                                         </motion.div>
                                     )}
@@ -2188,47 +2262,47 @@ const ultimasComprasListFiltrada = useMemo(() => {
                            </div>
                            
                            <ProgressButton 
-                              onClick={() => triggerAcao('exportPdf', 'Download do Relatório Iniciado.')} 
+                              onClick={handleExportarPDF} 
                               loading={savingState === 'exportPdf'} 
                               text="Exportar PDF" 
                               icon={Icons.Download} 
-                              className="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 font-bold rounded-xl text-xs shadow-sm transition-colors flex items-center gap-2" 
+                              className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:bg-slate-50 font-bold rounded-xl text-sm shadow-sm transition-colors flex items-center gap-2" 
                            />
                        </div>
                    </header>
 
-                   <div className="p-8 relative flex-1 overflow-y-auto custom-scrollbar">
-                       <div className="absolute left-[43px] top-8 bottom-8 w-[2px] bg-slate-100 hidden sm:block"></div>
-                       <div className="space-y-6 relative z-10">
+                   <div className="p-8 sm:p-12 relative flex-1 overflow-y-auto custom-scrollbar">
+                       <div className="absolute left-[59px] top-12 bottom-12 w-[2px] bg-slate-100 hidden sm:block"></div>
+                       <div className="space-y-8 relative z-10">
                           {auditLogsPaginados.length > 0 ? auditLogsPaginados.map((log) => (
-                              <article key={log.id} className="relative sm:pl-12">
-                                 <div className={`absolute left-0 top-1.5 w-5 h-5 rounded-full ring-4 ring-white shadow-sm flex items-center justify-center hidden sm:flex ${
+                              <article key={log.id} className="relative sm:pl-16">
+                                 <div className={`absolute left-0 top-1.5 w-6 h-6 rounded-full ring-4 ring-white shadow-sm flex items-center justify-center hidden sm:flex ${
                                      log.tipo === 'success' ? 'bg-emerald-500' : 
                                      log.tipo === 'warning' ? 'bg-amber-500' : 
                                      log.tipo === 'info' ? 'bg-blue-500' : 'bg-slate-400'
                                  }`}>
-                                     <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                                     <div className="w-2 h-2 bg-white rounded-full"></div>
                                  </div>
                                  
-                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm hover:border-blue-200 transition-all group">
-                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{formatDateTimeBR(log.data)}</p>
-                                     <h5 className="text-xs font-black text-slate-800 leading-tight group-hover:text-blue-600 transition-colors">{log.titulo}</h5>
-                                     <p className="text-[11px] text-slate-600 mt-1 font-medium leading-relaxed">{log.desc}</p>
+                                 <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm hover:border-blue-200 hover:shadow-md transition-all group">
+                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{formatDateTimeBR(log.data)}</p>
+                                     <h5 className="text-sm font-black text-slate-800 leading-tight group-hover:text-blue-600 transition-colors">{log.titulo}</h5>
+                                     <p className="text-xs text-slate-600 mt-1.5 font-medium leading-relaxed">{log.desc}</p>
                                  </div>
                               </article>
                           )) : (
-                              <div className="py-12 text-center text-slate-500 font-medium text-xs">Nenhum registro de auditoria encontrado neste período.</div>
+                              <div className="py-12 text-center text-slate-500 font-medium">Nenhum registro de auditoria encontrado neste período.</div>
                           )}
                        </div>
                    </div>
 
-                   <footer className="p-5 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-[11px] font-bold text-slate-500 gap-4 mt-auto shrink-0">
+                   <footer className="p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-500 gap-4 mt-auto shrink-0">
                        <span>Mostrando {(timelinePage - 1) * timelinePerPage + 1} até {Math.min(timelinePage * timelinePerPage, auditLogsFiltrados.length)} de {auditLogsFiltrados.length} logs</span>
                        <div className="flex items-center gap-4">
                            <span>Página {timelinePage} de {totalTimelinePages}</span>
                            <div className="flex gap-2">
-                               <button type="button" onClick={() => setTimelinePage(p => Math.max(1, p - 1))} disabled={timelinePage === 1} className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-3 h-3" /></button>
-                               <button type="button" onClick={() => setTimelinePage(p => Math.min(totalTimelinePages, p + 1))} disabled={timelinePage === totalTimelinePages} className="w-7 h-7 flex items-center justify-center bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-3 h-3" /></button>
+                               <button type="button" onClick={() => setTimelinePage(p => Math.max(1, p - 1))} disabled={timelinePage === 1} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronLeft className="w-4 h-4" /></button>
+                               <button type="button" onClick={() => setTimelinePage(p => Math.min(totalTimelinePages, p + 1))} disabled={timelinePage === totalTimelinePages} className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm"><Icons.ChevronRight className="w-4 h-4" /></button>
                            </div>
                        </div>
                    </footer>
