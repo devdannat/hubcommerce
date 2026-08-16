@@ -851,7 +851,8 @@ const AdminOrdersContent = () => {
                                             <h4 className="text-sm font-bold text-slate-800">Endereço de Entrega</h4>
                                         </div>
                                         <div className="space-y-3 text-xs font-medium text-slate-600">
-                                            <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Logradouro</span><span className="font-black text-slate-800 text-sm">{pedidoSelecionado.endereco?.logradouro}, {pedidoSelecionado.endereco?.numero}</span></div>
+                                            {/* CORREÇÃO DO ENDEREÇO COM OS NOVOS CAMPOS DO BANCO */}
+                                            <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Logradouro</span><span className="font-black text-slate-800 text-sm">{pedidoSelecionado.endereco?.rua}, {pedidoSelecionado.endereco?.num}</span></div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Bairro</span><span>{pedidoSelecionado.endereco?.bairro}</span></div>
                                                 <div className="flex flex-col"><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">CEP</span><span className="font-mono font-bold text-slate-500">{pedidoSelecionado.endereco?.cep}</span></div>
